@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Paper Learning</title>
+<script>history.scrollRestoration = "manual"</script>
+  <style>
+    body {
+      background: blue;
+      margin: 0;
+      padding: 0;
+      width: 103.02em;
+      height: 103.02em;
+      overflow: hidden;
+    }
+    span {
+      position: relative;
+      width: 2em;
+      height: 2em;
+      overflow: visible;
+      display: inline-block;
+      padding:0;
+      margin:0;
+      border: solid .01em lightgray;
+      z-index: 1;
+    }
+    .blank {
+      background: ghostwhite;
+      transition: all ease .05s;
+    }
+    .char {
+      position: fixed;
+      width: 2em;
+      height: 2em;
+      z-index: 5;
+      top: 50%;
+      left: 50%;
+    }
+    .charPath {
+      transition-delay: 200ms;
+    }
+    span:hover {
+      background: blue;
+      transition: all ease .05s;
+    }
+    div {
+      z-index: 1;
+    }
+    .rows {
+      width: 103.02em;
+      height: 2.02em;
+    }
+    #map {
+      position: absolute;
+      width: 103.02em;
+      height: 103.02em;
+      transition: all linear 200ms;
+    }
+  </style>
+</head>
+<body scroll="no">
+  <div id="map"></div>
+  <script>
+    //DECLARE VARIABLES
+    //Choose character colors
+    var charCol = '#ff0000'
+    var charTerCol = '#cf0404'
+    var charPathCol = '#f26f6f'
+    //Choose starting place
+    var charStartX = 25
+    var charStartY = 25
+    var char = document.createElement('span')
+    //Variable Declarations gen.
+    var moving
+    var pathX = 0
+    var pathY = 0
+    var newPath = false
+    var move = ''
+    //Map mathy variables
+    var mappy = document.getElementById('map')
+    var mapX = -808 + (window.innerWidth/2)
+    var mapY = -808 + (window.innerHeight/2)
+    var lefts = mapX
+    var ups = mapY
+    mappy.style.margin = '' + mapY + 'px 0 0 ' + mapX + 'px';
+
+    //DECLARE FUNCTIONS
+    //Create starting territory
+    function terrStart() {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          let terr = document.getElementById((charStartX + i - 1)+ 'n' + (charStartY + j - 1))
+          terr.className = 'charTer'
+          terr.classList.remove('blank')
+          terr.style.background = charTerCol
+        }
+      }
+    }
+    //Place character in center of starting territory
+    function charStart() {
+      var charNum = 0
+      char.id = 'char' + charNum
+      char.className = 'char'
+      char.style.background = charCol
+      document.body.appendChild(char)
+    }
+
+    //Turns blank grids into path grids
+    function pathMaker(x,y) {
+      let path = document.getElementById(x + 'n' + y)
+      if (!path) {
+        deathScene()
+      } else if (path.className === 'blank') {
+        console.log(path.className)
+        path.className = 'charPath'
+        path.classList.remove('blank')
+        path.style.background = charPathCol
+        newPath = true
+      } else if (path.className === 'charPath') {
+        deathScene()
+      } else if (path.className === 'charTer' && newPath === true) {
+        newPath = false;
+        fillR()
+      }
+    }
+
+    //Player Arrow Controls
+    document.onkeydown = function(event) {
+      switch (event.keyCode) {
+        case 32: clearInterval(moving); break;
+        case 37: if (move != 'right') {move = 'left'}; break;
+        case 38: if (move != 'down') {move = 'up'}; break;
+        case 39: if (move != 'left') {move = 'right'}; break;
+        case 40: if (move != 'up') {move = 'down'}; break;
+      }
+    }
+
+    //Moves the map to simulate motion
+    function mapMove(){
+      if (move === 'left') {
+        lefts = lefts + 32.3
+        pathX = pathX - 1
+      } else if (move === 'up') {
+        ups = ups + 32.3
+        pathY = pathY - 1
+      } else if (move === 'right') {
+        lefts = lefts - 32.3
+        pathX = pathX + 1
+      } else if (move === 'down') {
+        ups = ups - 32.3
+        pathY = pathY + 1
+      }
+      pathMaker((pathX + 25), (pathY + 25))
+      mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px';
+    }
+
+    //Kill player, restore board to factory settings
+    function deathScene() {
+      //Stop moving
+      clearInterval(moving)
+      //Delete paths, territory
+      spans = document.getElementsByTagName('span');
+      for (let i = 0; i < spans.length; i++) {
+        var sClass = spans[i].getAttribute('class')
+        if (sClass === 'charPath') {
+          spans[i].classList.remove('charPath')
+          spans[i].style.background = 'ghostwhite'
+        } else if (sClass === 'charTer') {
+          spans[i].classList.remove('charTer')
+          spans[i].style.background = 'ghostwhite'
+        }
+      }
+      //turn off character
+      char.style.background = 'darkgray'
+      //Factory Settings
+      pathX = 0
+      pathY = 0
+      setTimeout(function() {
+        lefts = mapX
+        ups = mapY
+        mappy.style.transition = 'margin linear 0s'
+        mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+        mappy.style.transition = 'margin linear 200ms'
+        terrStart()
+        charStart()
+        setTimeout(function() {
+          moving = setInterval(mapMove, 200)
+        }, 1000)
+      }, 3000)
+    }
+
+  //Fill in territory using parity
+    function fillR() {
+      var maxX = 0
+      var minX = 55
+
+      let paths = document.getElementsByClassName('charPath')
+      arrX = []
+      arrY = []
+      for (i = 0; i < paths.length; i++) {
+        pathId = paths[i].getAttribute('id')
+        idX = parseInt(pathId.split('n')[0], 10)
+        idY = parseInt(pathId.split('n')[1], 10)
+        arrX.push(idX)
+        arrY.push(idY)
+      }
+      //Find max/min X paths
+      for (i in arrX) {
+        if (arrX[i] < minX) { minX = arrX[i]; }
+        if  (arrX[i] > maxX) { maxX = arrX[i]; }
+      }
+      //Calculate range of spanning
+      var kArray = []
+      //row-level calculations
+      for (i = minX; i <= maxX; i++) {
+        var minY = 55; var maxY = 0; kArray = [];
+        //sort through array for proper values
+        for (k in arrY) {
+          if (arrX[k] = i) { kArray.push(arrY[k]); }
+        }
+        //Find max/min Y paths
+        for (l in kArray) {
+          if (kArray[l] < minY) { minY = kArray[l]; }
+          if (kArray[l] > maxY) { maxY = kArray[l]; }
+        }
+        //column level calculations
+        var parity = 0
+        for (j = minY; j <= maxY; j++) {
+          elem = document.getElementById(i + 'n' + j)
+          elCl = elem.getAttribute('class')
+          //In case of a present path, turn to territory
+          if (elCl === 'charPath') {
+            //Increase parity each time ]
+            parity++
+          } else if (elCl === 'blank' && parity%2 != 0) {
+            //In case of blank space within an odd parity of edges to the outside, turn to territory
+            elem.classList.remove('blank')
+            elem.className = 'charTer'
+            elem.style.background = 'purple'
+          }
+        }
+
+        //Do it again just to make sure, and this time transform the paths
+        parity = 0
+        for (j = maxY; j >= minY; j--) {
+          elem = document.getElementById(i + 'n' + j)
+          elCl = elem.getAttribute('class')
+          //In case of a present path, turn to territory
+          if (elCl === 'charPath') {
+            elem.classList.remove('charPath')
+            elem.className = 'charTer'
+            elem.style.background = 'red'
+            //Increase parity each time ]
+            parity++
+          } else if (elCl === 'blank' && parity%2 != 0) {
+            //In case of blank space within an odd parity of edges to the outside, turn to territory
+            elem.classList.remove('blank')
+            elem.className = 'charTer'
+            elem.style.background = 'purple'
+          }
+        }
+      }
+    }
+
+
+
+    //ACTUAL STUFF THAT HAPPENS
+    //Create and center starting grid
+    //51 rows and 51 columns
+    for (let i = 0; i < 51; i++) {
+      let rowDiv = document.createElement('div')
+      rowDiv.id = 'row' + i
+      rowDiv.className = 'rows'
+      document.getElementById('map').appendChild(rowDiv)
+      for (let j = 0; j < 51; j++) {
+        let elem = document.createElement('span')
+        elem.id = '' + j + 'n' + i + ''
+        elem.className = 'blank'
+        document.getElementById('row' + i).appendChild(elem)
+      }
+    }
+
+    //Initialize character and territory
+    terrStart()
+    charStart()
+
+    //Start the game Movement
+    moving = setInterval(mapMove, 200)
+
+  </script>
+</body>
+</html>

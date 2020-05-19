@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+  height: 100%;
+}
+body {
+  background-color: floralwhite;
+  width: 100%;
+  min-height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+div {
+  position: absolute;
+}
+span {
+  background-color: pink;
+  opacity: 0.8;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  position: absolute;
+  transition: all ease .1s;
+  transform-origin: center;
+  z-index: 1;
+}
+span.sec {
+  background-color: orange;
+}
+span.tert1, span.tert2 {
+  background-color: cyan;
+}
+span.mid1, span.mid2, span.mid3, span.mid4 {
+  background-color: gray;
+  width: 6px;
+  height: 6px;
+}
+span.pri:hover {
+  background-color: red;
+  transform: scale(3);
+}
+span.sec:hover {
+  background-color: carrot;
+  transform: scale(2.5);
+}
+span.tert1:hover, span.tert2:hover {
+  background-color: blue;
+  transform: scale(2);
+}
+span.mid1:hover, span.mid2:hover, span.mid3:hover, span.mid4:hover {
+  background-color: darkgray;
+  transform: scale(2);
+}
+p {
+  height: 0px;
+  width: 0px;
+  display: block;
+  position: absolute;
+  left: 50%;
+  transform-origin: top;
+  background-color: clear;
+  border-left: 0px;
+  border-right: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+}
+
+p.break {
+  border-left: 1px solid blue;
+}
+p.string {
+  background-color: pink;
+  border-left: 9px solid coral;
+  border-right: 9px solid coral;
+  box-shadow: 0 0 0 1px green;
+  border-radius: 10px;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script>
+$(function() {
+  //Defining Variables
+  var x = 0;
+  var y = 0;
+  var cX = 200;
+  var cY = 200;
+  var cent;
+  var angle = 0;
+  var length = 0;
+  var destroy = false;
+  var draw = true;
+  var sheft;
+  var lastX = [];
+  var lastY = [];
+  var type = '';
+  //Make dot
+  $.fn.dit = function(dX, dY, klass) {
+    $('div').append('<span id="' + i + "n" + j + '" class = "' + klass + '" style="top:' + (dY - 5) + 'px; left: ' + (dX - 5) + 'px"></span>');
+  }
+  //Make mid dots for each sec <!DOCTYPE html>
+  $.fn.dim = function(mX, mY, dX, dY) {
+    jX = (dX/4);
+    jY = (dY/4);
+    $.fn.dit(mX - jX + 3, mY - jY + 3, 'mid1')
+    $.fn.dit(mX - jX + 3, mY + jY + 3, 'mid2')
+    $.fn.dit(mX + jX + 3, mY - jY + 3, 'mid3')
+    $.fn.dit(mX + jX + 3, mY + jY + 3, 'mid4')
+  }
+  //Make dash
+  $.fn.dish = function(hX, hY) {
+    if (draw == false) {
+      type = 'break';
+    } else if (draw == true) {
+      type = 'string';
+      hX = hX - 8;
+    }
+    //determine past line position
+    cX = parseInt($('div p.' + type + ':last-child').css('left'), 10) + 1;
+    cY = parseInt($('div p.' + type +':last-child').css("top"), 10) + 15;
+    $('div p.' + type + ':last-child').attr('id', '0n0')
+    //calculate line dimensions
+    angle = (180 / Math.PI) * Math.atan2((hY - cY), (hX - cX));
+    length = 9 + Math.sqrt(Math.abs(((hX - cX) * (hX - cX)) + ((hY - cY) * (hY - cY))));
+    //Create line
+    $('div').append('<p class="' + type +'" style="top:' + (hY - 15) + 'px; left: ' + (hX - 1) + 'px; height: ' + length + 'px; transform: rotate(' + (angle + 90) + 'deg);"></span>');
+
+  }
+  //GRID FORMATION
+  var i;
+  var j;
+  var wid = $(window).width();
+  var hig = $(window).height();
+  var distX = 200;
+  var distY = 200;
+  var m = Math.round(wid/distY);
+  var n = Math.round(hig/distX);
+  for (i = 0; i < m; i++) {
+    for (j = 0; j < n; j++) {
+      var pX = 10 + distX * i;
+      var pY = 10 + distY * j;
+      var sX = pX + (distX/2);
+      var sY = pY + (distY/2);
+      $.fn.dit(pX, pY, 'pri');
+      if (i < m - 1 && j < n - 1) {
+        $.fn.dit(sX, sY, 'sec');
+        $.fn.dim(sX, sY, distX, distY);
+      // The blue tertiary cross over points
+      //   $.fn.dit(sX, pY, 'tert1');
+      //   $.fn.dit(pX, sY, 'tert2');
+      // } else if (i < m - 1) {
+      //   $.fn.dit(sX, pY, 'tert1');
+      // } else if (j < n - 1) {
+      //   $.fn.dit(pX, sY, 'tert2');
+      }
+    }
+  }
+  //Storing grid span coordinates
+  for (i = 0; i < m - 1; i++) {
+    for (j = 0; j < n - 1; j++) {
+      var midX = [];
+      var midY = [];
+      for (k = 1; k < 5; k++) {
+        midX.push(parseInt($('div span#' + i + 'n' + j + '.mid' + k).last().css("left"), 10) - 8);
+        midY.push(parseInt($('div span#' + i + 'n' + j + '.mid' + k).last().css("top"), 10) - 8);
+      }
+      console.log("mid: " + midX + "; " + midY)
+    }
+  }
+
+  //MOUSE FUNCTIONS
+  //entire page on click
+  $('body').on('click', function() {
+    if (cent) {
+      x = parseInt(cent.css("left"), 10) + (parseInt(cent.css("width"), 10)/2);
+      y = parseInt(cent.css("top"), 10) + (parseInt(cent.css("height"), 10)/2) - 1;
+      $.fn.dish(x, y);
+    }
+  })
+  //Hovering over dot
+  $('body').on('mouseover', 'span', function() {
+    var kls = $(this).attr('class');
+    if (draw == true && (kls == 'mid1' || kls == 'mid2' || kls == 'mid3' || kls == 'mid4')) {
+      cent = $(this);
+    } else if (draw == false && (kls == 'pri' || kls == 'sec')) {
+      cent = $(this);
+    }
+  })
+  $('body').on('mouseout', 'span', function() {
+    cent = null;
+  })
+  //Hovering over dash
+  $('body').on('mouseover', 'p', function() {
+    if (destroy == true) {
+      lastX.push(parseInt($(this).css('left'), 10) + 1);
+      lastY.push(parseInt($(this).css('top'), 10) + 15);
+      $(this).remove();
+    }
+  })
+  //KEYBOARD FUNCTIONS
+  $('body').keydown(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    //Checking for shift and/or control
+    if (keycode == 16 || keycode == 17) {
+      sheft = true;
+    }
+    //Checking for z (to undo)
+    //undoing dashes
+    if (keycode == 90 && sheft == true && $('div p').length != 0) {
+      lastX.push(parseInt($('div p').last().css('left'), 10) + 1);
+      lastY.push(parseInt($('div p').last().css('top'), 10) + 15);
+      $('div p').last().remove()
+    }
+    //Checking for y (to redo)
+    //redoing dashs
+    if (keycode == 89 && sheft == true && lastX.length != 0) {
+      x = lastX.pop();
+      y = lastY.pop();
+      //now add 'em back'
+      $.fn.dish(x, y);
+    }
+    //Checking for a (for free dash destruction toggle)
+    if (keycode == 65 && destroy == false) {
+      destroy = true;
+    } else if (keycode == 65) {
+      destroy = false;
+    }
+    //Checking for i (for draw toggle)
+    if (keycode == 73 && draw == false) {
+      draw = true;
+    } else if (keycode == 73) {
+      draw = false;
+    }
+  })
+  //Checking for shift up
+  $('body').keyup(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    if (keycode == 16 || keycode == 17) {
+      sheft = false;
+    }
+  })
+})
+</script>
+</head>
+<body>
+  <div>
+  <!-- This one does EVERYTHING -->
+  </div>
+</body>
+</html>

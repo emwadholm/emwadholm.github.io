@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      background-color: honeydew;
+    }
+    p {
+      width: 100%;
+      height: 60px;
+      position: relative;
+      font-size: 60px;
+      margin: 10px;
+    }
+    .okay {
+      font-size: 80px;
+      color: darkgray
+      transition: all ease .3s;
+    }
+    .okay:hover {
+      font-size: 84px;
+      color: orange;
+    }
+    div {
+      height: 70px;
+      width: 100%;
+      position: relative;
+    }
+    img {
+      width: 500px;
+      height: auto;
+      display: block;
+      position: relative;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 70px;
+      height:
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script>
+    $(function() {
+      $('body').on('click', '.okay', function() {
+        $('p').each(function() {this.remove()})
+        $('body').append('<div></div><p style="text-align: center;"> Good job and Good night. </p><p style="text-align: center;"> We have ALWAYS believed in you. </p><img src="SleepReward.jfif">')
+        $('body').css('background-color', 'PaleTurquoise');
+      })
+    })
+  </script>
+</head>
+<body>
+  <p>It's time to go to sleep, my dear. For our sakes.</p>
+  <p>You can sleep now and get up in the morning tomorrow.</p>
+  <p>It'll be good for you. I promise you, wholeheartedly.</p>
+  <p>Now I just need you to sleep, okay?</p>
+  <p class="okay">Okay.</p>
+</body>
+</html>

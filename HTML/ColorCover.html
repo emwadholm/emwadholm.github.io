@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<!-- This one's completed the framework, and added a bunch of preset shapes  -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Conquer and Grow</title>
+<script>history.scrollRestoration = "manual"</script>
+  <style>
+    body {
+      background: pink;
+      margin: 0;
+      padding: 0;
+      width: 1642.2px;
+      height: 1642.2px;
+      overflow: hidden;
+    }
+    #map {
+      cursor: none;
+      background: lightgray;
+      position: absolute;
+      width: 1642.2px;
+      height: 1642.2px;
+      transition: all linear 200ms;
+    }
+    .rows {
+      z-index: 1;
+      width: 1642.2px;
+      height: 32.2px;
+    }
+    span {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      overflow: visible;
+      display: inline-block;
+      padding:0;
+      margin:0;
+      border: solid .1px lightgray;
+      z-index: 1;
+    }
+    .blank {
+      background: ghostwhite;
+      transition: all ease .05s;
+    }
+    .char {
+      cursor: none;
+      position: fixed;
+      z-index: 5;
+      top: 50%;
+      left: 50%;
+    }
+    .charPath {
+      transition-delay: 200ms;
+    }
+    p {
+      color: black;
+      width: 16px;
+      height: 16px;
+      position: fixed;
+      z-index: 6;
+      text-shadow: -1px 0 ghostwhite, 0 1px ghostwhite, 1px 0 ghostwhite, 0 -1px ghostwhite;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    }
+    .charTime {
+      color: white;
+      margin: 3px 0 0 6px;
+    }
+    #statBar {
+      background: rgba(210, 75, 75, 0.5);
+      height: 40px;
+      width: 100vw;
+      position: absolute;
+      z-index: 2;
+    }
+    .statAsp {
+      background: none;
+      color: white;
+      margin: 0 0 0 10px;
+      display: inline;
+    }
+    #congrats {
+      width: 50px;
+      display: block;
+      margin: -20px auto;
+      border: none;
+      font-size: 20px;
+    }
+    #fillBar {
+      background: none;
+      height: 10px;
+    }
+    #holder {
+      width: 50vw;
+      height: 50vh;
+      background: white;
+      border-radius: 25px;
+      position: absolute;
+      left: 25%;
+      top: 25%;
+    }
+    .holder {
+      position: absolute;
+      width: 16vw;
+      height: 50vh;
+    }
+    #hold1 {
+      margin: 30px 0 0 2vw;
+    }
+    #hold2 {
+      margin: 30px 0 0 18.5vw;
+    }
+    #hold3 {
+      margin: 30px 0 0 35vw;
+    }
+    button {
+      cursor: pointer;
+    }
+    #beginner {
+      background: pink;
+      color: white;
+      border: none;
+      width: 42vw;
+      height: 50px;
+      margin: 4vw 0 0 4vw;
+    }
+    input {
+      position: relative;
+      cursor: pointer;
+      margin: 0 0 0 10px;
+    }
+    .info {
+      position: relative;
+      margin: 0 0 0 20px;
+      width: 50vw;
+      height: 20px;
+    }
+  </style>
+</head>
+<body scroll="no">
+  <script>
+    //Map default values
+    var mappy = document.createElement('div'); mappy.id = 'map';
+    var mapX; var mapY; var mapXNum = 21; var mapYNum = 21; var sSize = 32.2;
+    var berryCol = 'yellow'; var backCol = 'pink';
+    var colorSchema = [
+      ['#db9c58', '#f26f6f', '#eb564b', '#b5423a', '#7a302b'],
+      ['#2c93e8', '#00ffe5', '#13d4c0', '#0ca696', '#148579'],
+      ['#48e895', '#78ff03', '#72de14', '#54a60d', '#518a20'],
+      ['#846cf0', '#8000ff', '#7617d4', '#58119e', '#552287'],
+      ['#f04363', '#ff00a2', '#ff00a2', '#b01778', '#8f2167'],
+      ['#e6d44c', '#fccb05', '#deb614', '#b59410', '#8f781b']
+    ]
+    //Character variables
+    var char = document.createElement('span')
+    var charTime = document.createElement('p')
+    //Variables for moving
+    var moving; var pathX = 0; var pathY = 0; var lefts; var ups;
+    var newPath = false; var move = ''; var gSpeed = 200;
+    //Filling variables
+    var arrX = []; var arrY = []; var parity = [0,0,0,0];
+    var line = false; var end = false; var dont = false;
+    var innards = [];  var remover = [];
+    //Variables for Statistics
+    var sBlankNum; var nBlankNum; var filledFrac = 0;
+    var win = false; var seedWin = false; var terrWin = false;
+    var dead = false; var replay = false; var retry = false;
+    //Holds the state of the game. LavaC, SeedsC, SaveC etc.
+    var checkArr = [false, false, false, false, false]
+    var shp = 'default'; var moveSpeed;
+    //Time limit variables
+    var time; var timed; var timer; var timing = false;
+    var enerPlus = 1000; var stamPlus = 200; var timeMult = 1;
+    //Defining holders for the menu
+    var holder; var minHold1; var minHold2; var minHold3;
+    //Stat Bar Setup
+    var sBar = document.createElement('div'); sBar.id = 'statBar';
+    var fillBar = document.createElement('div'); fillBar.id = 'fillBar';
+    var barPerc = document.createElement('div')
+    barPerc.id = 'barPerc'; barPerc.className = 'statAsp';
+    sBar.appendChild(fillBar); sBar.appendChild(barPerc);
+    //Extra Stat Bar Variables
+    var seedNum = 0; var startSeedNum = 60; var stamina = 5000;
+    var barSeed = document.createElement('div')
+    barSeed.id = 'barSeed'; barSeed.className = 'statAsp';
+    var barStam = document.createElement('div')
+    barStam.id = 'barStam'; barStam.className = 'statAsp';
+    sBar.appendChild(barSeed); sBar.appendChild(barStam);
+    //Congrats setUp
+    var congrats = document.createElement('div')
+    congrats.id = 'congrats'; congrats.className = 'statAsp';
+    sBar.appendChild(congrats);
+
+    //Change Color Values
+    function colChange(colNum) {
+      charCol = colorSchema[colNum][0]; charPathCol = colorSchema[colNum][1];
+      charTerColI = colorSchema[colNum][2]; charTerColP = colorSchema[colNum][3];
+      charTerColS = colorSchema[colNum][4]; char.style.background = charCol;
+    }
+    //Create starting territory
+    function terrStart(x, y) {
+      for (let i = 0; i < 3; i++) { for (let j = 0; j < 3; j++) {
+        let terr = document.getElementById((Math.round(mapXNum/2) + i - 2)+ 'n' + (Math.round(mapYNum/2) + j - 2))
+        terr.className = 'charTerP'; terr.classList.remove('blank');
+        terr.style.background = charTerColS
+      }}
+    }
+    //Place character in the center of the starting territory
+    function charStart() {
+      var charNum = 0; char.id = 'char' + charNum;
+      char.className = 'char'; char.style.background = charCol;
+      char.style.width = (sSize - .2) + 'px'; char.style.height = (sSize - .2) + 'px';
+      document.body.appendChild(char)
+      if (checkArr[1] || checkArr[3]) {
+        charTime.id = 'charTime' + charNum; charTime.className = 'charTime';
+        if (checkArr[4]) {
+          charTime.style.fontSize = '60px'
+          charTime.style.margin = '3px 0 0 12px'
+        } else {
+          charTime.style.fontSize = '16px'
+          charTime.style.margin = '3px 0 0 6px'
+        }
+        char.appendChild(charTime)
+      }
+    }
+    //Populate the map with repNum number of seeds
+    function seedPopulate(repNum) {
+      for (i = 0; i<repNum; i++) {
+        blanks = document.getElementsByClassName('blank')
+        blankNum = Math.round((Math.random()*(blanks.length)))-1
+        if (blanks[blankNum]) {
+          var berry = blanks[blankNum]
+          berry.className = 'berry'; berry.classList.remove('blank');
+          berry.style.borderRadius = '50%'; berry.style.background = berryCol;
+        }
+      }
+    }
+    //Clear out a span to turn it into 'background'/null
+    function clearPop(x, y) {
+      let erase = document.getElementById(x + 'n' + y)
+      if (erase) {
+        erase.classList = ''; erase.className = 'wall';
+        erase.style.background = backCol
+        erase.style.border = 'solid .1px ' + backCol
+      } else {
+        console.log('Err! err! yo shape aint workin')
+      }
+
+    }
+    //Make a shape of the map by clearing out specific spans
+    function makeShape(shape) {
+      //If it's default, you need not do anything
+      //If it's a circle, clear out the edges basd on the elevation of each level
+      //compared to the center, and hor distance from the center
+      if (shape === 'circle') {
+        for (y = 0; y < mapYNum; y++) {
+          //Calculate the vert center, and the distance from it
+          var midY = (mapYNum/2) - .5; var difY = Math.abs(y - midY);
+          for (x = 0; x < mapXNum; x++) {
+            //Calculate the hor center, and the distance from it
+            var midX = (mapXNum/2) - .5; var difX = Math.abs(x - midX);
+            //This approaches 0 as the map gets larger, and helps make it more circly
+            var limit = ((parseInt(mapXNum) + parseInt(mapYNum))/(mapXNum*mapYNum))
+            //If a variable falls outside the described equation, clear it
+            if (((difX/midX)**2) + ((difY/midY)**2) >= (1 + limit)) { clearPop(x, y); }
+          }
+        }
+        //If it's a triangle, clear out the edges based on the elevation of each level
+        //compared to the bottom and distance from the vert center
+      } else if (shape === 'triangle') {
+        var scale = (2*mapYNum)/mapXNum
+        for (y = 0; y < mapYNum; y++) {
+          //distance from the vert bottom
+          var difY = mapYNum - y
+          for (x = 0; x < mapXNum; x++) {
+            //distance from the hor center
+            var difX = Math.abs((mapXNum/2) - x - .5)
+            if (difY + (scale*(difX-1)) > mapYNum ) { clearPop(x, y); }
+          }
+        }
+        //A mishapen circle (I'm not quite sure what's happened to it, but it's pretty :)
+      } else if (shape === 'doily') {
+        var scale = (2*mapYNum)/mapXNum
+        for (y = 0; y < mapYNum; y++) {
+          //distance from the vert center
+          var difY = Math.abs((mapYNum/2) - y - .5)
+          if (mapYNum%2 != 0) {difY = difY + .5}
+          for (x = 0; x < mapXNum; x++) {
+            //distance from the hor center
+            var difX = Math.abs((mapXNum/2) - x - .5)
+            //if it's odd, adjust for the middle
+            if (mapXNum%2 != 0) {difX = difX + .5}
+            if (((((difX)^2)/((mapXNum/2)^2)) + (((difY)^2)/((mapYNum/2)^2))) > 1) { clearPop(x, y) }
+          }
+        }
+        //If it's a diamond, center around both vert and hor centers,
+        //Then make straight lines like a triangle
+      } else if (shape === 'diamond') {
+        var scale = mapYNum/mapXNum
+        for (y = 0; y < mapYNum; y++) {
+          //distance from the vert center
+          var difY = Math.abs((mapYNum/2) - y - .5)
+          if (mapYNum%2 != 0) {difY = difY + .5}
+          for (x = 0; x < mapXNum; x++) {
+            //distance from the hor center
+            var difX = Math.abs((mapXNum/2) - x - .5)
+            //if it's odd, adjust for the middle
+            var plusser = -.5; if (mapXNum%2 != 0) {difX = difX + .5; plusser = .5};
+            if (difY + (scale*(difX-2)) > mapYNum/2 - plusser) { clearPop(x, y); }
+          }
+        }
+        //If it's a hexagon, take out the edges like a diamond, but bump over the scale
+      } else if (shape === 'hexagon') {
+        var scale = (2*mapYNum)/mapXNum
+        for (y = 0; y < mapYNum; y++) {
+          //distance from the vert center
+          var difY = Math.abs((mapYNum/2) - y - .5)
+          if (mapYNum%2 != 0) {difY = difY + .5}
+          for (x = 0; x < mapXNum; x++) {
+            //distance from the hor center
+            var difX = Math.abs((mapXNum/2) - x - .5)
+            //if it's odd, adjust for the middle
+            var plusser = 1; if (mapXNum%2 != 0) {difX = difX + .5; plusser = .5};
+            if (difY + (scale*(difX-1)) > mapYNum  - plusser) { clearPop(x, y); }
+          }
+        }
+        //To make a heart, make the bottom half a diamond, and the top two half-circles
+      } else if (shape === 'heart') {
+        var scale = (mapYNum)/mapXNum
+        for (y = 0; y < mapYNum; y++) {
+          //distance from the vert center for the diamond half
+          var midY = (mapYNum/2) - .5; var difY = Math.abs(y - midY);
+          //distance from the vert 3/8 for the half-circle parts
+          var cMidY = (mapYNum-1)*3/8; var cDifY = Math.abs(y - cMidY);
+          if (mapYNum%2 != 0) {difY = difY + .5}
+          for (x = 0; x < mapXNum; x++) {
+            //distance from the hor center for the diamond half
+            var midX = (mapXNum/2) - .5; var difX = Math.abs(x - midX);
+            //Center the dif around the two axes on top, but keep the 'center' the same
+            //for the purposes of calculation
+            var cMidX = (mapXNum - 1)*.25; var cDifX;
+            //the left half-circle
+            if (y <= cMidY && x < midX) {
+              cDifX = Math.abs(x - cMidX);
+              //the right half-circle
+            } else if (y <= cMidY && x >= midX) {
+              cDifX = Math.abs(x - (3*cMidX));
+            }
+            //if it's odd, adjust for the middle for the diamond
+            var plusser = 1; if (mapXNum%2 != 0) {difX = difX + .5; plusser = 0};
+            //This approaches 0 as the map gets larger, and helps make the half-circles more circly
+            var limit = (((parseInt(mapXNum)/2) + (parseInt(mapYNum)*3/4))/(mapXNum*mapYNum*3/8))
+            if ((difY + (scale*(difX-2)) > mapYNum/2 - plusser) && y > (mapYNum - 1)/2) {
+              clearPop(x, y)
+            } else if (((cDifX/cMidX)**2) + ((cDifY/(cMidY))**2) >= (1 + limit) && y < cMidY) {
+              clearPop(x, y)
+            }
+          }
+        }
+        //If it's a star: make a triangle on top, cut off two angles in the middle third,
+        //and cut off four angles on the bottom third; It's very complex.
+      } else if (shp === 'star') {
+        //It's just a triangle right now; it's difficult, man!
+        var scale = (2*mapYNum)/mapXNum
+        for (y = 0; y < mapYNum; y++) {
+          //distance from the vert bottom
+          var difY = mapYNum - y
+          for (x = 0; x < mapXNum; x++) {
+            //distance from the hor center
+            var difX = Math.abs((mapXNum/2) - x - .5)
+            if (difY + (scale*(difX-1)) > mapYNum ) { clearPop(x, y); }
+          }
+        }
+        //If it's a crescent, make a circle and then take a skewed circle out of it
+      } else if (shp === 'crescent') {
+        for (y = 0; y < mapYNum; y++) {
+          //Calculate the vert center, and the distance from it
+          var midY = (mapYNum/2) - .5; var difY = Math.abs(y - midY);
+          for (x = 0; x < mapXNum; x++) {
+            //Calculate the hor center, and the distance from it
+            var midX = (mapXNum/2) - .5; var difX = Math.abs(x - midX);
+            var cMidX = (mapXNum - 1)*.75; var cDifX = Math.abs(x - cMidX);
+            //This approaches 0 as the map gets larger, and helps make it more circly
+            var limit = ((parseInt(mapXNum) + parseInt(mapYNum))/(mapXNum*mapYNum))
+            //If a variable falls outside the described equation, clear it
+            if (((difX/midX)**2) + ((difY/midY)**2) >= (1 + limit)) { clearPop(x, y); }
+            if (((cDifX/(cMidX/3))**2) + ((difY/(midY/2))**2) < (1 + limit)) { clearPop(x, y); }
+          }
+        }
+      }
+    }
+    //Turns blank grids into path grids
+    function pathMaker(x,y) {
+      let path = document.getElementById(x + 'n' + y); statZ();
+      if (!path) {
+        deathScene(true)
+        //If the space is blank, make it a path
+      } else if (path.className === 'blank') {
+        //Also, if on a timed mode, set a timer
+        if (timing === false && (checkArr[1]||checkArr[3])) {
+          //If on timed hunting, reset timer; otherwise, keep time same as it ended last
+          if (checkArr[1] && !checkArr[3]) { (stamina = 5000 + seedNum*stamPlus)*timeMult; }
+          timing = true; timed = setTimeout(function() {deathScene(true);}, stamina);
+          timer = setInterval(function() {charTime.innerHTML = Math.round(stamina)/1000; stamina = (stamina - 100);}, 100)
+        }
+        path.className = 'charPath'; path.classList.remove('blank');
+        path.style.transitionDelay = gSpeed + 'ms';
+        path.style.background = charPathCol; newPath = true;
+        setTimeout(function() {path.style.transitionDelay = 0 + 'ms';}, gSpeed - 30)
+        //If the space is a berry, make it a path and collect the berry
+      } else if (path.className === 'berry') {
+        if (checkArr[3]) {
+          stamina = Math.round(stamina + (enerPlus*timeMult))
+        } else {
+          stamina = Math.round(stamina + (stamPlus*timeMult))
+        }
+        seedNum++; statZ();
+        //Also, if on a timed mode, set a timer
+        if (timing === false && (checkArr[1] || checkArr[3])) {
+          //If on timed hunting, reset timer; otherwise, keep time same as it ended last
+          if (checkArr[1] && !checkArr[3]) { (stamina = 5000 + seedNum*stamPlus)*timeMult; }
+          timing = true; timed = setTimeout(function() {deathScene(true);}, stamina);
+          timer = setInterval(function() {charTime.innerHTML = Math.round(stamina)/1000; stamina = (stamina - 100);}, 100)
+        } else if (timing === true && (checkArr[1] || checkArr[3])) {
+          //Update the time available even when in the middle of a path
+          clearTimeout(timed); timed = setTimeout(function() {deathScene(true);}, stamina - (time*1000));
+        }
+        path.classList.remove('berry'); path.className = 'charPath';
+        path.style.transitionDelay = gSpeed + 'ms';
+        path.style.borderRadius = '0%'; path.style.background = charPathCol;
+        setTimeout(function() {path.style.transitionDelay = 0 + 'ms';}, gSpeed - 30)
+        newPath = true
+        //If the space is deadly, die
+      } else if (((path.className === 'wall' && shp != 'doily' && shp != 'crescent') || path.className === 'charPath' || (checkArr[0] && path.className === 'charTer')) && win === false) {
+        deathScene(true)
+        //If the space is a valid territory, fill in the spaces in the path you've just made
+      } else if ((path.className === 'charTerP' || (!checkArr[0] && path.className === 'charTer')) && newPath === true) {
+        newPath = false; fillR();
+        //Also, if on a timed mode, clear the timer
+        //If timed hunting, reset time displays to 5.0sec
+        if (timing === true && (checkArr[1] || checkArr[3])) {
+          timing = false; clearTimeout(timed);
+          if (checkArr[3]) {
+            charTime.innerHTML = Math.round(stamina)/1000
+          } else if (checkArr[1]) {
+            stamina = (5000 + seedNum*stamPlus)*timeMult;
+            charTime.innerHTML = Math.round(stamina)/1000; barStam.innerHTML = Math.round(stamina)/1000;
+          }
+          clearInterval(timer); statZ();
+        }
+      }
+    }
+    //Player Arrow Controls
+    document.onkeydown = function(event) {
+      switch (event.keyCode) {
+        //In case of Esc, go back to menu, deleting map and statbar, and reinstating options holder
+        case 27:
+          if (document.body.contains(mappy)) { document.body.removeChild(mappy); mappy.innerHTML = ''; }
+          if (document.body.contains(sBar)) { document.body.removeChild(sBar); }
+          if (!document.body.contains(holder)) { deathScene(true); deathScene(false); setUpScreen(); }
+          break;
+        //In case of space, either end or replay the game
+        case 32:
+          if (dead === true) {
+            replay = true; mappy.style.transition = 'all ease 1.5s';
+            gameStart()
+          } else {
+            deathScene(true)
+          }
+          break;
+        //Follow the arrows and change the direction of movement (don't double back)
+        case 37: if (move != 'right') {move = 'left'}; break;
+        case 38: if (move != 'down') {move = 'up'}; break;
+        case 39: if (move != 'left') {move = 'right'}; break;
+        case 40: if (move != 'up') {move = 'down'}; break;
+      }
+    }
+    //Center the window and character every second or so
+    function mapCenter() {
+      //The centering process depends on whether the rows/columns are even or odd
+      //(since it's in relation to the character which is always centered)
+      if (mapXNum%2 === 0) {
+        nMapX = -Math.round(sSize*((mapXNum-2)/2)) + (window.innerWidth/2)
+      } else {
+        nMapX = -Math.round(sSize*((mapXNum-1)/2)) + (window.innerWidth/2)
+      }
+      if (mapYNum%2 === 0) {
+        nMapY = -Math.round(sSize*((mapYNum-2)/2)) + (window.innerHeight/2)
+      } else {
+        nMapY = -Math.round(sSize*((mapYNum-1)/2)) + (window.innerHeight/2)
+      }
+      //If the newly calculated centerings conflict with the current one's, the map is updated
+      if (nMapX != mapX) { lefts = lefts - mapX + nMapX; mapX = nMapX; }
+      if (nMapY != mapY) { ups = ups - mapY + nMapY; mapY = nMapY; }
+      //If the character is dead, there is a special transform and centering process
+      if (dead === true) {
+        nMapX = -Math.round(sSize*((mapXNum-1)/2)) + (window.innerWidth/2)
+        nMapY = -Math.round(sSize*((mapYNum-1)/2)) + (window.innerHeight/2)
+        if (nMapX != mapX) {mapX = nMapX; }
+        if (nMapY != mapY) {mapY = nMapY; }
+        ups = mapY - (sSize/2) + 20; lefts = mapX - (sSize/2);
+        var scaler
+        var scalerX = .9*(window.innerWidth/mappy.clientWidth)
+        var scalerY = .9*(window.innerHeight/mappy.clientHeight)
+        if (scalerX > scalerY) { scaler = scalerY; } else { scaler = scalerX; }
+        mappy.style.transition = 'all ease 1.5s'
+        mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+        mappy.style.transform = 'scale(' + scaler + ')'
+      } else {
+        mappy.style.transform = ''
+        mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+      }
+    }
+    //Moves the map to simulate character motion
+    function mapMove() {
+      //Depending on the key most recently pressed, the movement goes in one direction
+      if (move === 'left') {
+        lefts = lefts + sSize; pathX = pathX - 1;
+      } else if (move === 'up') {
+        ups = ups + sSize; pathY = pathY - 1;
+      } else if (move === 'right') {
+        lefts = lefts - sSize; pathX = pathX + 1;
+      } else if (move === 'down') {
+        ups = ups - sSize; pathY = pathY + 1;
+      }
+      //The pathMaker is called to color in the path, and the map is moved around the character
+      pathMaker((pathX + Math.round(mapXNum/2 - 1)), (pathY + Math.round(mapYNum/2 - 1)))
+      mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+    }
+    //Zoom out of board and kill player/restore game to factory settings
+    //Depending on the boolean value given for state
+    function deathScene(state) {
+      if (state) {
+        dead = true; clearInterval(moving); clearTimeout(moveSpeed);
+        clearInterval(timing); clearInterval(timer); clearInterval(timed);
+        mapCenter(); char.style.display = 'none';
+        //Calculating the proper 'congrats' message
+        if (win === true && seedWin === true && terrWin === true) {
+          congrats.innerHTML = 'You won by collecting all the seeds AND by covering the whole map!'
+          congrats.style.width = '562px'
+        } else if (win === true && seedWin === true) {
+          congrats.innerHTML = 'You won by collecting all the seeds!'
+          congrats.style.width = '291px'
+        } else if (win === true && terrWin === true) {
+          congrats.innerHTML = 'You won by covering the whole map!'
+          congrats.style.width = '303px'
+        } else {
+          congrats.innerHTML = 'You lost!'
+          congrats.style.width = '73px'
+        }
+        //Gets rid of ugly borders, but really lags the death process
+        //spans = document.getElementsByTagName('span')
+        // for (let i = 0; i < spans.length; i++) {
+        //   spans[i].style.border = 'none'
+        // }
+      } else {
+        //Reset values and displays
+        win = false; seedWin = false; terrWin = false;
+        dead = false; replay = false; timing = false;
+        pathX = 0; pathY = 0; newPath = false; move = '';
+        seedNum = 0; stamina = 5000*timeMult; time = 0;
+        lefts = mapX; ups = mapY;
+        if (checkArr[1] || checkArr[3]) {
+          charTime.innerHTML = '5.0'
+        } else (
+          charTime.innerHTML = ''
+        )
+        mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+        //Turn all spans back to blank territory
+        spans = document.getElementsByTagName('span')
+        for (let i = 0; i < spans.length; i++) {
+          var sClass = spans[i].getAttribute('class')
+          if (sClass != 'char') {
+            //Used in conjunction with border removal with state = true
+            // spans[i].style.border = 'solid .1px lightgray'
+            spans[i].classList.remove(spans[i].getAttribute('class'))
+            spans[i].className = 'blank'
+            spans[i].style.background = 'ghostwhite'
+            spans[i].style.borderRadius = '0%'
+          }
+        }
+      }
+    }
+      //The inside function for fillR
+      function fillCol(i, j, parNum, first) {
+        //Checking which coordinate system to use
+        if (first === true) {
+          elem = document.getElementById(i + 'n' + j)
+        } else if (first === false){
+          elem = document.getElementById(j + 'n' + i)
+        }
+        elCl = elem.getAttribute('class')
+        //If it's the second path in a row one's seen, don't fill stuff in
+        //(it's a line, and is unpredictable. Sometimes this can mean a spot is left unfilled)
+        //Still increase parity, to even the score from the last one
+        if (elCl === 'charPath' && line === true && dont === false) {
+          parity[parNum] = parity[parNum] + 1
+          dont = true; end = true;
+        //If it's the first path one's seen recently, increase parity
+        } else if (elCl === 'charPath' && line === false) {
+          parity[parNum] = parity[parNum] + 1
+          line = true; dont = false;
+        //If it's blank, parity is odd (mathy stuff), and you're not following a line:
+        //Save the space to fill in later
+        } else if (elCl === 'blank' && parity[parNum]%2 != 0 && dont === false) {
+          line = false; dont = false;
+          elem.classList.remove('blank'); elem.className = 'charTerPoss';
+          //If it's blank but parity is even or one's following a line, set this space as NOT territory,
+          //and remove it later if another run flags it as territory
+        } else if (elCl === 'blank') {
+          line = false; dont = false;
+          remover.push(elem.getAttribute('id'))
+          //If it's a berry, treat it as a blank, but don't change it's border-radius
+          //(this will signify that it's an ex-berry for later)
+        } else if (elCl === 'berry' && parity[parNum]%2 != 0 && dont === false) {
+          line = false; dont = false;
+          elem.classList.remove('berry'); elem.className = 'charTerPoss';
+          //Just like a blank, if parity is even or it's following a line, save it for
+          //removal at a later date
+        } else if (elCl === 'berry') {
+          line = false; dont = false;
+          remover.push(elem.getAttribute('id'))
+          //If it's a territory, just end the process. It's easier that way, and usually more accurate
+        } else if (elCl === 'charTer' || elCl === 'charTerP'){
+          end = true; line = false; dont = false;
+          //If it's a possible territory and now has even parity, save it for removal later
+          //So, all runs must agree before it is added in a definite first run
+        } else if (elCl === 'charTerPoss' && parity[parNum]%2 == 0 && dont === false) {
+          line = false; remover.push(elem.getAttribute('id'));
+        }
+      }
+
+      //Does a seed fill for any pesky remaining blanks
+      //It starts with every inner-territory (the innards), and does a seed-fill
+      //It checks the four adjacent spans, then if any one is a blank, it repeats
+      //for this new territory, until all adjacent spans are filled
+      function innardsCheck(inns) {
+        newInnards = []
+        inns.forEach(function(inn, id) {
+          let x = parseInt(inn.split('n')[0], 10)
+          let y = parseInt(inn.split('n')[1], 10)
+          var places = []
+          places[0] = document.getElementById((x + 1) + 'n' + y)
+          places[1] = document.getElementById((x - 1) + 'n' + y)
+          places[2] = document.getElementById(x + 'n' + (y + 1))
+          places[3] = document.getElementById(x + 'n' + (y - 1))
+          places.forEach(function(pl, id2) {
+            if (pl) {
+              plCl = pl.getAttribute('class')
+              //If it's a blank or berry, turn it to territory and run the id through
+              if (plCl === 'blank') {
+                pl.classList.remove('blank'); pl.className = 'charTer';
+                pl.style.background = charTerColI
+                newInnards.push(pl.getAttribute('id'))
+              } else if (plCl === 'berry') {
+                seedNum++
+                pl.classList.remove('berry'); pl.className = 'charTer';
+                pl.style.background = charTerColI; pl.style.borderRadius = '0%';
+                newInnards.push(pl.getAttribute('id'))
+              }
+            }
+          })
+          //If there are any new territories, run it again for them
+          if (newInnards[0]) { innardsCheck(newInnards) }
+        })
+      }
+
+  //Fill in territory once a path is completed
+    function fillR() {
+      var maxX = 0; var minX = 55; arrX = [];
+      var maxY = 0; var minY = 55; arrY = [];
+      innards = []; remover = [];
+      //Fill an array with all preexisting territory/paths,
+      //and use this to determine min-maxes for each row and column sweep
+      let paths = document.getElementsByClassName('charPath')
+      let terrs = document.getElementsByClassName('charTer')
+      let terrPs = document.getElementsByClassName('charTerP')
+      let borders = [...paths, ...terrs, ...terrPs]
+      for (i = 0; i < borders.length; i++) {
+        var pathId = borders[i].getAttribute('id')
+        arrX.push(parseInt(pathId.split('n')[0], 10))
+        arrY.push(parseInt(pathId.split('n')[1], 10))
+      }
+      //Find max/min columns and rows
+      for (i in arrX) {
+        if (arrX[i] < minX) { minX = arrX[i]; }
+        if  (arrX[i] > maxX) { maxX = arrX[i]; }
+      }
+      for (i in arrY) {
+        if (arrY[i] < minY) { minY = arrY[i]; }
+        if  (arrY[i] > maxY) { maxY = arrY[i]; }
+      }
+      //Sort through rows both directions, and then columns both directions when the function
+      //is called with reversed values
+      var kArray = []
+      function sortR(minC, maxC, arrC, arrR, p, first) {
+        for (i = minC; i <= maxC; i++) {
+          //Recalculating min/max for each line as you sweep
+          var minR = 55; var maxR = 0; kArray = [];
+          arrR.forEach(function(k, l) {
+            if (arrC[l] === i) { kArray.push(k); }
+          })
+          for (var m of kArray) {
+            if (m < minR) { minR = m;}
+            if (m > maxR) { maxR = m;}
+          }
+          //Sorting rows top to bottom
+          parity = [0,0,0,0]
+          line = false; end = false; dont = false;
+          for (j = minR; j <= maxR; j++) {
+            if (end === false) { fillCol(i, j, (0 + p), first); }
+          }
+          //Sorting rows bottom to top
+          parity = [0,0,0,0]
+          line = false; end = false; dont = false;
+          for (j = maxR; j >= minR; j--) {
+            if (end === false) { fillCol(i, j, (1 + p), first); }
+          }
+        }
+      }
+      //Calling for rows and columns
+      sortR(minX, maxX, arrX, arrY, 0, true); sortR(minY, maxY, arrY, arrX, 2, false);
+      //Turns all the paths into territory
+      for (i = 0; i < paths.length; i = i) {
+        elem = paths[i]
+        elem.classList.remove('charPath'); elem.className = 'charTerP';
+        elem.style.background = charTerColP
+      }
+      //Remove all prospies that didn't make the cut
+      for (i = 0; i < remover.length; i++) {
+        removed = document.getElementById(remover[i])
+        if (removed) {
+          removed.classList.remove('charTerPoss'); removed.className = 'blank';
+          //If the prospie was a berry, give it back it's yellow hue
+          if (removed.style.borderRadius === '50%') {
+            removed.style.background = berryCol
+          } else {
+            removed.style.background = 'ghostwhite'
+          }
+        }
+      }
+      //Turn all accepted prospies into territory
+      possies = document.getElementsByClassName('charTerPoss')
+      for (var i = 0; i < possies.length; i = i) {
+        poss = possies[i]; possId = poss.getAttribute('id');
+        poss.classList.remove('charTerPoss'); poss.className = 'charTer';
+        poss.style.background = charTerColI
+        //Do a bit extra for prospie ex-berries
+        if (poss.style.borderRadius === '50%') {
+          poss.style.borderRadius = '0%'
+          if (checkArr[3]) {
+            stamina = Math.round(stamina + enerPlus)
+          } else {
+            stamina = Math.round(stamina + stamPlus)
+          }
+          seedNum++
+        }
+        //Push all new territories to the innards seed-fill run
+        innards.push(possId)
+      }
+      //Run the innards seed-fill with these new found values, and update stats afterwards
+      innardsCheck(innards); statZ();
+    }
+    //Update stats and check whether the player has won
+    function statZ() {
+      //Checking the territory percentage which is
+      //the effective number of territories divided by the initial number of blank spaces
+      nBlankNum = document.body.getElementsByClassName('blank').length
+      nSeedNum = document.body.getElementsByClassName('berry').length
+      nPathNum = document.body.getElementsByClassName('charPath').length
+      filledFrac = ((sBlankNum - nBlankNum -nSeedNum - nPathNum)/sBlankNum)
+      //Update the percentage of the map that's territory
+      barPerc.innerHTML = (filledFrac*100).toFixed(2) + '% of the Map'
+      //If there's energy, update that too
+      if (checkArr[1] || checkArr[3]) {
+        barStam.innerHTML = 'ENERGY: ' + Math.round(stamina)/1000
+      }
+      //If the number of collected seeds is counted, update that as well
+      if (checkArr[2]) {
+        barSeed.innerHTML = 'SEEDS: ' + seedNum
+        //If you get all the seeds, you win (and thus die)
+        if (seedNum === startSeedNum) {
+          win = true; seedWin = true;
+          //If you've simulaneously covered the whole board, you get both wins!
+          if (filledFrac === 1) { terrWin = true; }
+          deathScene(true)
+        }
+      //If you win, you die, otherwise if you pass a milestone percentage, the
+      //new character laying colors are different
+      }
+      if (filledFrac === 1) {
+        win = true; terrWin = true; deathScene(true);
+      } else if (filledFrac > .8) {
+        colChange(4)
+      } else if (filledFrac > .6) {
+        colChange(3)
+      } else if (filledFrac > .4) {
+        colChange(2)
+      } else if (filledFrac > .2) {
+        colChange(1)
+      }
+    }
+
+    //Create the map and start the game rolling
+    function mapMake() {
+      //Set the initial mapX and mapY for map centering
+      if (mapXNum%2 === 0) {
+        mapX = -Math.round(sSize*((mapXNum-2)/2)) + (window.innerWidth/2)
+      } else {
+        mapX = -Math.round(sSize*((mapXNum-1)/2)) + (window.innerWidth/2)
+      }
+      if (mapYNum%2 === 0) {
+        mapY = -Math.round(sSize*((mapYNum-2)/2)) + (window.innerHeight/2)
+      } else {
+        mapY = -Math.round(sSize*((mapYNum-1)/2)) + (window.innerHeight/2)
+      }
+      lefts = mapX; ups = mapY;
+      //Do the first centering of the map, and adjust the body and map size to the num of rows and columns
+      mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px';
+      document.body.style.width = mapXNum * sSize + 'px'
+      document.body.style.height = mapYNum * sSize + 'px'
+      mappy.style.width = mapXNum * sSize + 'px'
+      mappy.style.height = mapYNum * sSize + 'px'
+      //The actual process of populating the map with blank spans, row by row and column by column
+      //The ids reflect the row and column numbers for quick recall later
+      for (let i = 0; i < mapYNum; i++) {
+        let rowDiv = document.createElement('div')
+        rowDiv.id = 'row' + i; rowDiv.className = 'rows';
+        rowDiv.style.width = (mapXNum * sSize) + 'px'
+        rowDiv.style.height = sSize + 'px'
+        document.getElementById('map').appendChild(rowDiv)
+        for (let j = 0; j < mapXNum; j++) {
+          let elem = document.createElement('span')
+          elem.id = '' + j + 'n' + i + ''; elem.className = 'blank';
+          elem.style.width = '' + (sSize - .2) + 'px'; elem.style.height = '' + (sSize - .2) + 'px';
+
+          document.getElementById('row' + i).appendChild(elem)
+        }
+      }
+    }
+
+    //Start the game and reset/set up variables and arrays
+    function gameStart() {
+      //If you're restarting from the death screen, wait a bit to start
+      //to allow for a smooth zoom back in to the board
+      if (replay) {
+        moveSpeed = setTimeout( function() {
+          char.style.display = 'block'
+          mappy.style.transition = 'margin linear ' + gSpeed + 'ms'
+          moving = setInterval(function() {mapMove();}, gSpeed)
+        }, 1500)
+      }
+      //If the character has won recently, give them the win colors
+      if (!win) { colChange(0); } else { colChange(5); }
+      //Reset values, center the map, and place the character with starting territory
+      deathScene(false); mapCenter(); terrStart(); charStart();
+      //Set up seeds if the game is in that mode
+      if (!replay) {
+        makeShape(shp)
+      }
+      if (checkArr[1] || checkArr[2] || checkArr[3]) {
+        var seedVal
+        //Give less seeds for Hungry Character; it's more fun that way
+        if (checkArr[3]) { seedVal = 20; } else { seedVal = 25; }
+        startSeedNum = Math.round(mapXNum*mapYNum/seedVal)
+        seedPopulate(startSeedNum)
+      }
+      //Setup the Stat Bar and some starting values
+      sBlankNum = document.getElementsByClassName('blank').length + startSeedNum
+      document.body.appendChild(sBar); statZ();
+      congrats.innerHTML = ''; barStam.innerHTML = ''; barSeed.innerHTML = '';
+      //Start centering map continously, every second or so
+      setInterval(function() {mapCenter();}, 1000)
+    }
+
+    //FUNCTIONS FOR THE INSIDE OF setUpScreen()
+    //Puts break between lines
+    function brk(holdr) {
+      let brk = document.createElement('br'); holdr.append(brk);
+    }
+    //Puts informational text around inputs
+    function txtr(idT, id, fill, holdr, x, y, fWeight) {
+      let text = document.createElement('label')
+      text.innerHTML = fill; text.className = 'info';
+      if (idT) {text.htmlFor = id;}
+      text.style.fontWeight = fWeight
+      text.style.margin = '' + x + 'px 0 0 ' + y + 'px'
+      holdr.appendChild(text)
+    }
+    //Makes clicker miniHolders
+    function holdMaker(id) {
+      let holder = document.getElementById('holder')
+      let holdere = document.createElement('div')
+      holdere.className = 'holder'; holdere.id = 'hold' + id;
+      holder.appendChild(holdere); return holdere;
+    }
+    //Makes mode clickers
+    function modeMaker(info, num, marg) {
+      let checker = document.createElement('input')
+      checker.className = 'checker'; checker.id = 'checker' + (num + 1);
+      checker.type = 'checkbox';
+      if (checkArr[num]) {checker.checked = true;}
+      checker.style.margin = '' + marg + 'px 0 0 10px'
+      brk(minHold1); minHold1.appendChild(checker); txtr(true, 'checker' + (num + 1), info, minHold1);
+      return checker
+    }
+    //Makes size input boxes
+    function sizeMaker(deflt, info, id, marg) {
+      let mapSize = document.createElement('input')
+      mapSize.id = 'map' + id; mapSize.className = 'mapSize';
+      mapSize.type = 'type'; mapSize.defaultValue = deflt;
+      mapSize.style.margin = '' + (20 + marg) + 'px 0 0 10px'
+      brk(minHold2); txtr(true, 'map' + id, info, minHold2, 20, 10);
+      minHold2.appendChild(mapSize); return mapSize;
+    }
+    //Make shape choices
+    function radioMaker(val, name, label, num, marg) {
+      let mapShape = document.createElement('input')
+      mapShape.type = 'radio'; mapShape.id = '' + name + num + '';
+      mapShape.value = val; mapShape.name = name;
+      mapShape.style.margin = '' + marg + 'px 0 0 10px';
+      brk(minHold3); minHold3.appendChild(mapShape); txtr(true, name + num, label, minHold3);
+      if (shp === val) { mapShape.checked = true; }
+      return mapShape
+    }
+    //Store picked values into the game before starting, if one has just come from the starting screen
+    function gameFromMenu(lTC, tHC, sSC, hCC, bC, sMC, mX, mY, s1, s2, s3, s4, s5, s6, s7, s8, s9) {
+      //Check that the mpa values are valid numbers within a reasonable range
+      //If they're not, say so and say why
+      if (isNaN(mX.value) || isNaN(mY.value)) {
+        alert('One of your map values is not a valid number'); retry = true;
+      } else if (mX.value < 3 || mY.value < 3) {
+        alert('One of your map values is too small (it should be at least 3)'); retry = true;
+      } else if (mX.value > 150 || mY.value > 150) {
+        alert('One of your map values is too large (over 150 and the page crashes)'); retry = true;
+      } else { retry = false; }
+      //If you're good to go:
+      if (!retry) {
+        //Set up the mode values
+        function checkFill(checker, num) { checkArr[num] = checker.checked; }
+        checkFill(lTC, 0); checkFill(tHC, 1); checkFill(sSC, 2); checkFill(hCC, 3); checkFill(bC, 4); checkFill(sMC, 5);
+        if (checkArr[4]) { sSize = 100.2; } else { sSize = 32.2; }
+        if (checkArr[5]) { gSpeed = 350; timeMult = 2;} else { gSpeed = 200; timeMult = 1;}
+        //Set up the map size values
+        if (mX.value) { mapXNum = mX.value; }; if (mY.value) { mapYNum = mY.value; };
+        //Set up the map shape values
+        if (s1.checked) {
+          shp = 'default';
+        } else if (s2.checked) {
+          shp = 'circle';
+        } else if (s3.checked) {
+          shp = 'triangle';
+        } else if (s4.checked) {
+          shp = 'doily';
+        } else if (s5.checked) {
+          shp = 'diamond';
+        } else if (s6.checked) {
+          shp = 'hexagon'
+        } else if (s7.checked) {
+          shp = 'heart'
+        } else if (s8.checked) {
+          shp = 'crescent'
+        } else if (s9.checked) {
+          shp = 'star'
+        }
+        //Start setting up the map, fill the map, and start the game
+        document.body.removeChild(holder); document.body.appendChild(mappy);
+        mapMake(); mappy.style.transition = 'all ' + gSpeed + 'ms linear'
+        moving = setInterval(function() {mapMove();}, gSpeed)
+        char.style.display = 'block'; mappy.style.transition = 'margin linear ' + gSpeed + 'ms';
+        gameStart()
+      }
+    }
+    //Dynamically makes the start-up screen/menu
+    function setUpScreen() {
+      //Holder for ev'thing
+      holder = document.createElement('div')
+      holder.id = 'holder'; document.body.appendChild(holder);
+      //Start Button
+      let start = document.createElement('button')
+      start.id = 'beginner'; start.className = 'start';
+      start.innerHTML = 'Start'; start.type = 'button';
+      holder.appendChild(start)
+      //Mode Checker Holder
+      minHold1 = holdMaker(1)
+      txtr(false, null, 'Game Modes:', minHold1, 30, 10, 'bold')
+      let checker1 = modeMaker('Lava Territory', 0, 10);
+      let checker2 = modeMaker('Timed Hunting', 1);
+      let checker3 = modeMaker('Seed Saver', 2);
+      let checker4 = modeMaker('Hungry Character', 3);
+      let checker5 = modeMaker('Blinders', 4);
+      let checker6 = modeMaker('Slo-mo', 5);
+      //Map Size Holder
+      minHold2 = holdMaker(2)
+      txtr(false, null, 'Map Size:', minHold2, 30, 10, 'bold')
+      let mapHor = sizeMaker(mapXNum, 'Map Width', 'Hor', 0)
+      let mapVert = sizeMaker(mapYNum, 'Map Height', 'Vert', 0)
+      //Map Shape Holder
+      minHold3 = holdMaker(3)
+      txtr(false, null, 'Map Shape:', minHold3, 30, 10, 'bold')
+      let shape0 = radioMaker('default', 'shape', 'Default', 0, 10)
+      let shape1 = radioMaker('circle', 'shape', 'Circle', 1)
+      let shape2 = radioMaker('triangle', 'shape', 'Triangle', 2)
+      let shape3 = radioMaker('doily', 'shape', 'Doily', 3)
+      let shape4 = radioMaker('diamond', 'shape', 'Diamond', 4)
+      let shape5 = radioMaker('hexagon', 'shape', 'Hexagon', 5)
+      let shape6 = radioMaker('heart', 'shape', 'Heart', 6)
+      let shape7 = radioMaker('crescent', 'shape', 'Crescent', 7)
+      let shape8 = radioMaker('star', 'shape', 'Star (non-functional)', 8)
+      //Sets up start-click function
+      start.onclick = function() {gameFromMenu(checker1, checker2, checker3, checker4, checker5, checker6, mapHor, mapVert, shape0, shape1, shape2, shape3, shape4, shape5, shape6, shape7, shape8);}
+    }
+    //Start the game with the start-up screen
+    setUpScreen()
+  </script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+  height: 100%;
+}
+body {
+  background-color: ghostwhite;
+  width: 100%;
+  min-height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+div {
+  position: absolute;
+}
+span {
+  background-color: goldenrod;
+  opacity: 0.8;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  position: absolute;
+  transition: all ease .1s;
+  transform-origin: center;
+  z-index: 1;
+}
+
+span:hover {
+  background-color: gold;
+  transform: scale(3);
+}
+header {
+  position: absolute;
+  color: black;
+  text-align: center;
+}
+header.stats {
+  width: 100%;
+  top: 0px;
+  text-align: left;
+}
+header.help {
+  color: transparent;
+  position: relative;
+  width: 49%;
+  top: 0px;
+  float: right;
+  text-align: right;
+}
+p {
+  height: 2px;
+  width: 2px;
+  display: block;
+  position: absolute;
+  transform-origin: top;
+  border-color: lightblue;
+  background-color: lightblue;
+  border-left: 2px;
+  border-right: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script>
+$(function() {
+  //Defining Variables
+  var x = 0;
+  var y = 0;
+  var cX = 200;
+  var cY = 200;
+  var cent;
+  var crnt;
+  var lst;
+  var destroy = false;
+  var erase = false;
+  var help = true;
+  var nod1 = true;
+  var eNum = 0;
+  var nNum = 0;
+  var pubNNum = 0;
+  var pNum;
+  var sNum;
+  var eId;
+  var nId;
+  var knctd = false;
+  var present = false;
+  var nexts = [];
+  var reached = [];
+  var exists = [];
+  var allR = false;
+  var rIds = [];
+  var paths = {};
+  //Make node
+  $.fn.dit = function(x, y) {
+    nNum = nNum + 1;
+    pubNNum = pubNNum + 1;
+    $('div').append('<span id="' + nNum + '" style="top:' + (y - 5) + 'px; left: ' + (x - 5) + 'px;"></span>');
+    }
+  //Make edge
+  $.fn.dish = function(x, y, cX, cY, pNum, sNum) {
+    if (pNum == sNum) { //Checks that same node twice
+      //Checks that edge is not present on map
+    } else if ($('#z' + pNum + 'to' + sNum + "z").length == 0 && $('#z' + sNum + 'to' + pNum + "z").length == 0) {
+      eNum = eNum + 1;
+      //Calculate line dimensions
+      var angle = (180 / Math.PI) * Math.atan2((y - cY), (x - cX));
+      var length = Math.sqrt(Math.abs(((x - cX) * (x - cX)) + ((y - cY) * (y - cY))));
+      $('div').append('<p id="z' + pNum + 'to' + sNum + 'z" style="top:' + (y - 15) + 'px; left: ' + (x - 1) + 'px; height: ' + length + 'px; transform: rotate(' + (angle + 90) + 'deg);"></p>');
+    }
+  }
+  //Checks edges that a node is connected to;
+  $.fn.pathChecker = function(i) {
+    //Cycles through span given id
+    // for (i of nexts) {
+      //Cycles through edges given span id, then stores other endpoint of edge if other endpoint was not given
+      $('p[id*="z' + i + 'to' + '"]').each( function() {
+        //The function's not getting in these...
+        lefId = $(this).prop('id').split('z').pop().split('t')[0];
+        if (nexts.inArray(lefId) == -1) {
+          rIds.push(lefId);
+        }
+        console.log('lefId: ' + lefId);
+
+      })
+      $('p[id*="to' + i + 'z' + '"]').each( function() {
+        rigId = $(this).prop('id').split('o').pop().split('z')[0];
+        if (nexts.inArray(rigId) == -1) {
+          rIds.push(rigId);
+        }
+        console.log('rigId: ' + rigId);
+      })
+    // }
+    rIds.push($('span#' + i).prop('id'))
+    //console.log('i: ' + i)
+    //console.log('Edge id connected to i: ' + $('p[id*="z' + i + 'to' + '"]').prop('id'))
+    //console.log('Connected spans: ' + rIds);
+  }
+  $.fn.checkIfAll = function() {
+    rIds = [];
+    //console.log('last-child id: ' + $('span:last-child').prop('id'));
+    reached = [];
+    exists = [];
+    $('span').each( function() {exists.push($(this))});
+    $.fn.pathChecker($('span:last-child').prop('id'));
+    //Ripped this from https://www.geeksforgeeks.org/how-to-check-whether-an-array-is-subset-of-another-array-using-javascript/
+    //Checks whether all existent spans are reachable. If allR, all connected; else if !allR, not all are reached, not connected
+    allR = !exists.some(val => reached.indexOf(val) === -1);
+  }
+  //Determines whether all nodes have edges, and the max num
+  $.fn.present = function() {
+    present = true;
+    presNum = 0;
+    $('div span').each(function(){
+      sNum = $(this).prop('id');
+      lefId = $('[id*="z' + sNum + 'to' + '"]').length
+      rigId = $('[id*="to' + sNum + 'z' + '"]').length
+      if ( lefId == 0 && rigId == 0) {
+        present = false;
+      } else if (lefId + rigId > presNum){
+        presNum = lefId + rigId;
+      }
+    })
+  }
+  //Determines whether all nodes are connected
+  $.fn.knctd = function() {
+    $.fn.checkIfAll();
+    if (nNum == 1 || nNum == 0) {
+      knctd = true;
+    } else if (present == false || eNum < (nNum - 1) ) {
+      knctd = false;
+    } else if (eNum > (((nNum - 1) * (nNum - 2))/2)){
+      knctd = true;
+    } else if (allR) {
+      knctd = true;
+      console.log('long way succesful')
+    } else {
+      knctd = false;
+    }
+    //   //if 2 & 1 edge/present, knctd
+    //   //if 3 & 2 edges/present, knctd
+    //   //if 4 & 3 edges, non o'er 2/present1, knctd
+    //   //There's an edge case for n5, when 3n and 2n knctd
+    // else if ((eNum >= (nNum - 1)) && presNum <= 2) {
+    //   knctd = true;
+    // } else if (eNum > (((nNum - 3) * (nNum - 2))/2) + 1) {
+    //   knctd = true;
+    // } else {
+    //   knctd = false;
+    // }
+  }
+  //Update stats bar
+  $.fn.stats = function() {
+    $.fn.present();
+    $.fn.knctd();
+    var pE = pubNNum - 1;
+    if (pubNNum == 0) {
+      pE = 0;
+    }
+    $('header.stats').html("Edges: " + eNum + "    Nodes: " + pubNNum + "    PathEdges: " + pE + "    CycleEdges: " + pubNNum + "    MaxEdges: " + (pubNNum*(pubNNum-1))/2 + "  Connected: " + knctd + "  Present: " + present + "  MaxPresent: " + presNum);
+  }
+  //Define end coordinates based of end spans
+  $.fn.ends = function(crnt, lst) {
+    x = parseInt(crnt.css("left"), 10) + 5;
+    y = parseInt(crnt.css("top"), 10) + 5;
+    cX = parseInt(lst.css("left"), 10) + 5;
+    cY = parseInt(lst.css("top"), 10) + 5;
+  }
+  //MOUSE FUNCTIONS
+  //entire page on click
+  $('body').on('click', function() {
+    if (!cent) {
+      //Drawing nodes
+      nod1 = true;
+      x = event.pageX;
+      y = event.pageY;
+      $.fn.dit(x, y);
+    //When hovering over a node and when in edge-draw (non node-draw) mode
+    } else if (cent) {
+      //Drawing edges
+      x = parseInt(cent.css("left"), 10) + (parseInt(cent.css("width"), 10)/2);
+      y = parseInt(cent.css("top"), 10) + (parseInt(cent.css("height"), 10)/2) - 1;
+
+      //Start of edge
+      if (nod1 == true) {
+        cX = x;
+        cY = y;
+        nod1 = false;
+        pNum = cent.prop('id');
+      //End of edge
+      } else {
+        sNum = cent.prop('id');
+        $.fn.dish(x, y, cX, cY, pNum, sNum);
+        nod1 = true;
+      }
+    }
+    //Update stats
+    $.fn.stats();
+  })
+  //Hovering over node
+  $('body').on('mouseover', 'span', function() {
+    cent = $(this);
+    //When hovering over a span (node) in erase mode
+    if (cent && erase == true) {
+      //Deleting node and all connected edges
+      nId = cent.prop('id');
+      nod1 = true;
+      //Sorting through edges
+      $('div p').each(function() {
+        eId = $(this).prop('id');
+        //Checking for connected edges
+        if (~eId.indexOf("z" + nId + "to") || ~eId.indexOf("to" + nId + "z")) {
+          $(this).remove();
+          eNum = eNum - 1;
+        }
+      })
+      //Deleting node
+      cent.remove();
+      cent = false;
+      //Updating stats
+      pubNNum = pubNNum - 1;
+      $.fn.stats();
+    }
+  })
+  $('body').on('mouseout', 'span', function() {
+    cent = null;
+  })
+  //Hovering over edge
+  $('body').on('mouseover', 'p', function() {
+    if (destroy == true) {
+      this.remove();
+      eNum = eNum - 1;
+      $.fn.stats();
+    }
+  })
+  //KEYBOARD FUNCTIONS
+  $('body').keydown(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    //Checking for a (to perform allcnct)
+    if (keycode == 65) {
+      $('div span').each(function() {
+        crnt = $(this)
+        pNum = $(this).prop('id');
+        $('div span').each(function() {
+          lst = $(this)
+          $.fn.ends(crnt, lst);
+          sNum = $(this).prop('id');
+          $.fn.dish(x, y, cX, cY, pNum, sNum);
+        })
+      })
+      nod1 = true;
+      $.fn.stats();
+    }
+    //Checking for c (to determine whether is connected/knctd)
+    if (keycode == 67) {
+      $.fn.knctd();
+      $.fn.stats();
+    }
+    //Checking for h (for help bar toggle)
+    if (keycode == 72 && help == false) {
+      $('header.help').css('color', 'black');
+      help = true;
+    } else if (keycode == 72) {
+      $('header.help').css('color', 'transparent');
+      help = false;
+    }
+    //Checking for r (to reset EVERYTHING)
+    if (keycode == 82) {
+      $('div p').each( function() {$(this).remove()});
+      $('div span').each( function() {$(this).remove()});
+      $('div header.lab').each( function() {$(this).remove()});
+      eNum = 0;
+      nNum = 0;
+      pubNNum = 0;
+      destroy = false;
+      erase = false;
+      nod1 = true;
+      $.fn.stats();
+    }
+    //Checking for s (to delete all edges)
+    if (keycode == 83) {
+      $('div p').each( function() {$(this).remove()});
+      eNum = 0;
+      nod1 = true;
+      $.fn.stats();
+    }
+    //Checking for d (for destroy toggle for edges)
+    if (keycode == 68 && destroy == false) {
+      destroy = true;
+    } else if (keycode == 68) {
+      destroy = false;
+    }
+    //Checking for e (for erase toggle for nodes)
+    if (keycode == 69 && erase == false) {
+      erase = true;
+    } else if (keycode == 69) {
+      erase = false;
+    }
+  })
+})
+
+//More Stats?
+//Layered edges/ show walks
+//Calculate whether connected?
+//Fix paths and cycles to work after deletions
+//Create trees
+//Determine things about trees
+//Create new thing that automatically makes trees on click?
+//Determine if connected
+</script>
+</head>
+<body>
+  <div>
+  <!-- This one does EVERYTHING -->
+  </div>
+  <header class="stats">
+  <!-- Gives graph info, floats on top -->
+  Edges: 0    Nodes: 0    PathEdges: 0    CycleEdges: 0    MaxEdges: 0    Connected: false    Present: true
+    MaxPresent: 0
+  </header>
+  <header class="help">
+  <!-- Gives help info, floats on top -->
+  h = help; r = reset; s = delete all edges; d = destroy edges; e = erase nodes;
+  </header>
+</body>
+</html>

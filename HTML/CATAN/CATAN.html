@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hex World</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+* {
+  font-size: 150px;
+}
+#dice {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 0.2em;
+  -webkit-user-select: none;
+}
+#dice p {
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  color: #333;
+  font-size: 28px;
+}
+#dice:active {
+  font-size: 0.23em;
+}
+#board {
+  width: 2.02em;
+  margin: 0.2em auto;
+  background: #2c82e6;
+  text-align: center;
+  position: relative;
+  height: 3.5em;
+  overflow: visible;
+ /* -webkit-transform: perspective(600px) rotateX(60deg);
+-moz-transform: perspective(600px) rotateX(60deg);
+-ms-transform: perspective(600px) rotateX(60deg);
+-o-transform: perspective(600px) rotateX(60deg);
+transform: perspective(600px) rotateX(60deg);*/
+}
+#board:before,
+#board:after {
+  width: 2.02em;
+  top: 0;
+  background: #2c82e6;
+  position: absolute;
+  height: 3.5em;
+  transform: rotate(60deg);
+  content: '';
+  display: block;
+  z-index: 0;
+}
+#board:after {
+  transform: rotate(-60deg);
+}
+#board > div {
+  height: 0.55em;
+  overflow: visible;
+  position: relative;
+  left: -0.6em;
+  top: 0.10em;
+  z-index: 1;
+  width: 3em;
+}
+span {
+  position: relative;
+  color: #6C6;
+  width: 0.6em;
+  height: 1.5em;
+  overflow:visible;
+  display: inline-block;
+  line-height: 1em;
+  padding:0;
+  margin:0;
+  text-shadow: 0 0 3px rgba(0,0,0,0.6);
+}
+span.desert {
+  color: #d9d09a;
+}
+span.wood {
+  color: #098213;
+}
+span.hay {
+  color: #ffeb0f;
+}
+span.sheep {
+  color: #59f748;
+}
+span.clay {
+  color: #ba6311;
+}
+span.stone {
+  color: #6e7b85;
+}
+span > b {
+  background: #e0d8a6;
+  border-radius: 1em;
+  display: inline-block;
+  position: absolute;
+  top: 3.8em;
+  width: 1em;
+  text-align: center;
+  color: #000;
+  font-size: 0.1em;
+  height:1em;
+  line-height: 1em;
+  padding: 0.4em;
+  box-shadow: 0 0 3px rgba(0,0,0,0.8);
+  text-shadow: none;
+}
+span > b.red {
+  color: red;
+}
+.house.red {
+  background: #c90a0a;
+}
+.house {
+  position: absolute;
+  left: 0.6em;
+  top: 0.8em;
+  height: 0.2em;
+  width: 0.2em;
+  transform:scale(0.4);
+  border-left: .1em solid #a30303;
+  z-index: 999;
+}
+.house:before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -0.07em;
+  left: 0.03em;
+  transform: rotate(45deg);
+  width: 0.141em;
+  height: 0.141em;
+  background: inherit;
+}
+.house:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -0.097em;
+  left: -0.054em;
+  width: 0.099em;
+  height: 0.099em;
+  background:  #ff1c1c;
+  transform: skew(-45deg);
+}
+.place {
+  width: 0.2em;
+  height: 0.2em;
+  border-radius: 0.4em;
+  background: transparent;
+  position: absolute;
+  z-index: 999;
+}
+.place.hoverPlace, .place:hover {
+  box-shadow: 0 0 3px 0 rgba(0,0,0,0.6);
+}
+.placeA {
+  left: 0;
+  top: 0.19em;
+}
+.placeB {
+  left: 0.3em;
+  top: 0.03em;
+}
+.placeC {
+  right:-0.2em;
+  top:0.19em;
+}
+.placeD {
+  right:-0.2em;
+  top:0.585em;
+}
+.placeE {
+  left: 0.3em;
+  top: 0.73em;
+}
+.placeF {
+  left: 0;
+  top: 0.585em;
+}
+.place .house {
+  left: -0.05em;
+  top: 0;
+}
+br {
+  line-height:0em;
+  margin:0;
+  padding:0;
+}
+.hide {
+  display: none;
+}
+</style>
+</head>
+<body>
+  <div id="houseRed0" class="house red" draggable="true" ondragstart="drag(event)"></div>
+  <div id="houseRed1" class="house red" draggable="true" ondragstart="drag(event)"></div>
+  <div id="houseRed2" class="house red" draggable="true" ondragstart="drag(event)"></div>
+  <div id="dice">🎲 = <p id="diceP"></p></div>
+
+
+  <div class="place" id="place0a" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+  <div class="place" id="place0b" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+
+  <div id="board">
+  </div>
+
+  <script>
+  let number
+  let mapPieces = {
+    'row0':{
+      0:{'type':'stone','num':10,'dev':{}},
+      1:{'type':'sheep','num':2},
+      2:{'type':'wood','num':9},
+    },
+    'row1':{
+      0:{'type':'hay','num':12},
+      1:{'type':'clay','num':6},
+      2:{'type':'sheep','num':4},
+      3:{'type':'clay','num':10}
+    },
+    'row2':{
+      0:{'type':'hay','num':9},
+      1:{'type':'wood','num':11},
+      2:{'type':'desert','num':7},
+      3:{'type':'wood','num':3},
+      4:{'type':'stone','num':8}},
+    'row3':{
+      0:{'type':'wood','num':8},
+      1:{'type':'stone','num':3},
+      2:{'type':'hay','num':4},
+      3:{'type':'sheep','num':5}},
+    'row4':{
+      0:{'type':'clay','num':5},
+      1:{'type':'hay','num':6},
+      2:{'type':'sheep','num':11}}
+  }
+  // row by row, add <b> and class to spans to place cities/roads
+  for (row in mapPieces) {
+    let rowDiv = document.createElement('div')
+    rowDiv.id = row
+    document.getElementById('board').appendChild(rowDiv)
+    for (item in mapPieces[row]) {
+      let span = document.createElement('span')
+      let special = ''
+      if (mapPieces[row][item]['num'] === 6 || mapPieces[row][item]['num'] === 8) {
+        special = ' class="red"'
+      } else if (mapPieces[row][item]['num'] === 7){
+        special = ' class="hide"'
+      }
+      span.innerHTML = '&#x2B22;<b'+ special +'>'+ mapPieces[row][item]['num'] +'</b><div class="place placeA" id="place'+ row +''+ item +'a"></div><div class="place placeB" id="place'+ row +''+ item +'b" ondrop="drop(event)"></div><div class="place placeC" id="place'+ row +''+ item +'c"></div><div class="place placeD" id="place'+ row +''+ item +'d"></div><div class="place placeE" id="place'+ row +''+ item +'e" ></div><div class="place placeF" id="place'+ row +''+ item +'f"></div><div class="place roadPlace placeG" id="place'+ row +''+ item +'g" ></div><div class="place roadPlace placeH" id="place'+ row +''+ item +'h"></div><div class="place roadPlace placeI" id="place'+ row +''+ item +'i"></div><div class="place roadPlace placeJ" id="place'+ row +''+ item +'j"></div><div class="place roadPlace placeK" id="place'+ row +''+ item +'k"></div><div class="place roadPlace placeL" id="place'+ row +''+ item +'l"></div>'
+      span.className = mapPieces[row][item]['type']
+
+      document.getElementById(row).appendChild(span)
+
+    }
+  }
+  // Iterate through places and make them interactive to show user where they can add a city/road
+  var allPlaces = document.getElementsByClassName("place");
+  for (var i = 0; i < allPlaces.length; i++) {
+    allPlaces.item(i).addEventListener('drop',function(e){
+      drop(event)
+    })
+    allPlaces.item(i).addEventListener('dragover',function(e){
+      allowDrop(event)
+      this.classList.add('hoverPlace')
+    })
+    allPlaces.item(i).addEventListener('mouseout',function(e){
+      this.classList.remove('hoverPlace')
+    })
+    allPlaces.item(i).addEventListener('dragleave',function(e){
+      this.classList.remove('hoverPlace')
+    })
+
+  }
+
+  function dice() {
+    return Math.floor(Math.random() * Math.floor(6)) + Math.floor(Math.random() * Math.floor(6)) + 2
+  }
+
+  document.getElementById('dice').addEventListener('mouseup',function(e){
+    document.getElementById('diceP').innerHTML = dice()
+    number = dice()
+  })
+
+  // Drag and drop
+  function allowDrop(ev) {
+    ev.preventDefault();
+  }
+  function drag(ev) {
+    ev.dataTransfer.setData("Text", ev.target.id);
+  }
+  function drop(ev) {
+    var data = ev.dataTransfer.getData("Text");
+    ev.target.appendChild(document.getElementById(data));
+    ev.preventDefault();
+  }
+  </script>
+</body>
+</html>

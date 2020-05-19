@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      background-color: honeydew;
+    }
+    p {
+      width: 100%;
+      height: 60px;
+      position: relative;
+      font-size: 60px;
+      margin: 10px;
+    }
+    .okay {
+      font-size: 80px;
+      color: darkgray
+      transition: all ease .3s;
+    }
+    .okay:hover {
+      font-size: 84px;
+      color: orange;
+    }
+    div {
+      height: 0px;
+      width: 100%;
+      position: relative;
+    }
+    textarea {
+      display: block;
+      position: relative;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 50px;
+      height:
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script>
+    $(function() {
+      $('body').on('click', '.okay', function() {
+        $('p.message').each(function() {this.remove()})
+        var motmessages = ['You are beautiful!', 'You are intelligent!', 'You are kind!', 'You are talented!', 'You are a blessing!', 'You are loved!', 'You have a good life ahead of you!', 'There is always hope in the Lord!', 'James 1:2-5. Recite it. For me.', 'Give yourself a hug!']
+        var randNum = Math.floor(Math.random() * Math.floor(10))
+        var motmessage = motmessages[randNum]
+        $('p.you').html(motmessage)
+        $('p.are').html("You are a wholly worthwhile human being. For suresies.")
+        $('div').css('height', '40px')
+        $('p.okay').css('text-align', 'center')
+        $('body').css('background-color', 'PaleTurquoise');
+      })
+    })
+  </script>
+</head>
+<body>
+  <p class="message">Feeling stressed?</p>
+  <p class="message">Like the weight of the world is on your shoulders?</p>
+  <p class="message">And other such near-meaningless cliches?</p>
+  <p class="message">Then click the button for help!</p>
+  <div></div>
+  <p class="you" style="text-align: center;"></p>
+  <p class="are" style="text-align: center;"></p>
+  <div></div><div></div><div></div><div></div>
+  <p class="okay">[*this is a button*]</p>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+  height: 100%;
+}
+body {
+  background-color: ghostwhite;
+  width: 100%;
+  min-height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+div {
+  position: absolute;
+}
+span {
+  background-color: goldenrod;
+  opacity: 0.8;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  position: absolute;
+  transition: all ease .1s;
+  transform-origin: center;
+  z-index: 1;
+}
+span:hover {
+  background-color: gold;
+  transform: scale(3);
+}
+header {
+  position: absolute;
+  color: black;
+  text-align: center;
+}
+header#num {
+  margin: 10px 0 0 0;
+  color: black;
+  width: 0px;
+  height: 0px;
+  text-align: center;
+  z-index: 2;
+}
+header.lab {
+  color: black;
+  font-size: 20px;
+}
+header.stats {
+  width: 100%;
+  top: 0px;
+  text-align: left;
+}
+header.help {
+  color: transparent;
+  position: relative;
+  width: 49%;
+  top: 0px;
+  float: right;
+  text-align: right;
+}
+p {
+  height: 2px;
+  width: 2px;
+  display: block;
+  position: absolute;
+  transform-origin: top;
+  border-color: green;
+  background-color: green;
+  border-left: 2px;
+  border-right: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+}
+</style>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script>
+$(function() {
+  //State trackers
+  var destroy = false;
+  var erase = false;
+  var help = true;
+  var nod1 = true;
+  //Graph trackers
+  var eNum = 0;
+  var nNum = 0;
+  var pubNNum = 0;
+  var knctd = true;
+  var type = '... a blank screen. I suggest you rememedy this by clicking around!';
+  //Edge creation trackers
+  var cent;
+  var label = false;
+  var begId;
+  var endId;
+  var eId;
+  var nId;
+
+  //Creates a node
+  $.fn.dit = function(x, y) {
+    //Adding nodes to running totals (they're seperate because node erasure creates a big problem for edge id's if the node id is accurate to the number of nodes)
+    nNum = nNum + 1;
+    pubNNum = pubNNum + 1;
+    $('div').append('<span id="' + nNum + '" style="top:' + (y - 5) + 'px; left: ' + (x - 5) + 'px;"></span>');
+    $('div span#' + nNum).append('<header id="num">' + (nNum - 1) + '</header>')
+    }
+
+  //Creates an edge
+  $.fn.dish = function(x, y, cX, cY, begId, endId) {
+    if (begId != endId && $('#' + begId + 'to' + endId).length == 0 && $('#' + endId + 'to' + begId).length == 0) {
+      //Aads and edge to the running total
+      eNum = eNum + 1;
+      //Calculates line dimensions
+      var angle = (180 / Math.PI) * Math.atan2((y - cY), (x - cX));
+      var length = Math.sqrt(Math.abs(((x - cX) * (x - cX)) + ((y - cY) * (y - cY))));
+      //The id contains the id's of the connected nodes hedge in with
+      $('div').append('<p class="edge" id="' + begId + 'to' + endId + '" style="top:' + (y - 15) + 'px; left: ' + (x - 1) + 'px; height: ' + length + 'px; transform: rotate(' + (angle + 90) + 'deg);"></p>');
+    }
+  }
+
+  //Takes edge id's and checks for those 'connected' to the active node
+  $.fn.checkNSep = function(totId, actId, pId) {
+    var nexId;
+    //Checks for pertinent edges and decoding their id's into the id of the next node
+    if (totId.indexOf(actId + 'to') != -1) {
+      nexId = totId.slice( (totId.indexOf('to') + 2));
+    } else if (totId.indexOf('to' + actId) != -1) {
+      nexId = totId.slice(0, (totId.indexOf('to')) );
+    }
+    //Moves things around in the running arrays
+    if ((nexId) && (done.indexOf(nexId) == -1)) {
+      for( var i = 0; i < existent.length; i++) { if ( existent[i] == nexId) { existent.splice(i, 1); } }
+      reached.push(nexId);
+      done.push(nexId);
+      lines[pId] = 'x';
+    }
+  }
+
+  //Determines whether the graph is connected
+  $.fn.knctd = function() {
+    //Setting up the running categorization arrays
+    existent = [];
+    reached = [];
+    lines = [];
+    done = [];
+    //Sets up the nodes and spans present in the graph as pure numbers and/or ids
+    $('div span').each( function() {
+      existent.push($(this).prop('id'));
+    })
+    $('div p.edge').each( function() {
+      lines.push($(this).prop('id'));
+    })
+    //Sets last span as the first to go through the edge check
+    $('div span').last().each(function(){
+      actId = $(this).prop('id');
+      for(var i=0; i < existent.length; i++) { if ( existent[i] == actId) { existent.splice(i, 1); } }
+      reached.push(actId);
+      done.push(actId);
+    })
+    //Looping through all connections starting from last span
+    while (lines.length != 0 && existent.length != 0 && reached.length != 0) {
+      for (i in reached) {
+        for (j in lines) {
+          $.fn.checkNSep(lines[j], reached[i], j);
+        }
+        reached.splice(i, 1);
+      }
+    }
+    //Checks whether the graph is connected
+    knctd = false;
+    if (existent.length == 0) {
+      knctd = true;
+    }
+  }
+
+//Determines what category the graph falls into
+  $.fn.type = function() {
+    $.fn.knctd();
+    if (knctd == true && pubNNum - 1 == eNum) {
+      type = ' and is a tree.';
+    } else if (knctd == true){
+      type = ", is connected, and contains at least one cycle.";
+    } else if (pubNNum == 0) {
+      type = ' and is... a blank screen. I suggest you rememedy this by clicking around!';
+    } else{
+      type = ' and is disconnected. Add some more edges?';
+    }
+  }
+
+  //Update stats bar
+  $.fn.stats = function() {
+    $.fn.type();
+    var pE = pubNNum - 1;
+    if (pubNNum == 0) {
+      pE = 0;
+    }
+    $('header.stats').html("Your graph has " + eNum + " edges on " + pubNNum + " nodes" + type);
+  }
+
+  //MOUSE FUNCTIONS
+  //entire page on click
+  $('body').on('click', function() {
+    if (!cent && label == true) {
+      x = event.pageX;
+      y = event.pageY;
+      $('div').append('<header class="lab" style="top:' + (y - 5) + 'px; left: ' + (x - 5) + 'px;">1</header>');
+    } else if (!cent) {
+      //Creates a node and resets the edge drawing process
+      nod1 = true;
+      x = event.pageX;
+      y = event.pageY;
+      $.fn.dit(x, y);
+    } else if (cent) {
+      //Creates an edge or sets up for creating one next time
+      x = parseInt(cent.css("left"), 10) + (parseInt(cent.css("width"), 10)/2);
+      y = parseInt(cent.css("top"), 10) + (parseInt(cent.css("height"), 10)/2) - 1;
+
+      //Beginning of the edge
+      if (nod1 == true) {
+        cX = x;
+        cY = y;
+        nod1 = false;
+        begId = cent.prop('id');
+      //End of the edge
+      } else {
+        endId = cent.prop('id');
+        $.fn.dish(x, y, cX, cY, begId, endId);
+        nod1 = true;
+      }
+    }
+    $.fn.stats();
+  })
+
+  //When hovering over a node
+  $('body').on('mouseover', 'span', function() {
+    cent = $(this);
+    //Deletes the node and all of its edges when in erase mode
+    if (cent && erase == true) {
+      nId = cent.prop('id');
+      nod1 = true;
+      //Checks for all adjacent edges and removes them
+      $('div .edge').each(function() {
+        eId = $(this).prop('id');
+        if (~eId.indexOf(nId)) {
+          $(this).remove();
+          eNum = eNum - 1;
+        }
+      })
+      cent.remove();
+      cent = false;
+      pubNNum = pubNNum - 1;
+      $.fn.stats();
+    }
+  })
+  //When hovering away from the node
+  $('body').on('mouseout', 'span', function() {
+    cent = null;
+  })
+  //When hovering over an edge in destroy mode
+  $('body').on('mouseover', 'p', function() {
+    if (destroy == true) {
+      $(this).remove();
+      eNum = eNum - 1;
+      $.fn.stats();
+    }
+  })
+
+  //KEYBOARD FUNCTIONS
+  $('body').keydown(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+
+    //Checks for a, will connect all nodes with edges
+    if (keycode == 65) {
+      $('div span').each(function() {
+        var crnt = $(this);
+        begId = $(this).prop('id');
+        $('div span').each(function() {
+          var lst = $(this);
+          x = parseInt(crnt.css("left"), 10) + 5;
+          y = parseInt(crnt.css("top"), 10) + 5;
+          cX = parseInt(lst.css("left"), 10) + 5;
+          cY = parseInt(lst.css("top"), 10) + 5;
+          endId = $(this).prop('id');
+          $.fn.dish(x, y, cX, cY, begId, endId);
+        })
+      })
+      nod1 = true;
+      $.fn.stats();
+    }
+
+    //Checs for h, will toggle help bar
+    if (keycode == 72 && help == false) {
+      $('header.help').css('color', 'black');
+      help = true;
+    } else if (keycode == 72) {
+      $('header.help').css('color', 'transparent');
+      help = false;
+    }
+
+    //Checks for r, to entirely reset the board
+    if (keycode == 82) {
+      $('div p.edge').each( function() {$(this).remove()});
+      $('div span').each( function() {$(this).remove()});
+      $('div header.lab').each( function() {$(this).remove()});
+      eNum = 0;
+      nNum = 0;
+      pubNNum = 0;
+      destroy = false;
+      erase = false;
+      nod1 = true;
+      $.fn.stats();
+    }
+    //Checks for s, will delete all edges
+    if (keycode == 83) {
+      $('div p.edge').each( function() {$(this).remove()});
+      eNum = 0;
+      nod1 = true;
+      $.fn.stats();
+    }
+    //Checks for d, will toggle edge destruction on hover
+    if (keycode == 68 && destroy == false) {
+      destroy = true;
+    } else if (keycode == 68) {
+      destroy = false;
+    }
+    //Checking for l (to toggle labeling)
+    if (keycode == 76 && label == false) {
+      label = true;
+    } else if (keycode == 76) {
+      label = false;
+    }
+    //Checks for e, will toggle node erasure on hover
+    if (keycode == 69 && erase == false) {
+      erase = true;
+    } else if (keycode == 69) {
+      erase = false;
+    }
+  })
+})
+
+</script>
+</head>
+<body>
+  <div> <!-- This one does EVERYTHING --> </div>
+  <header class="stats"> <!-- Gives graph info, floats on top -->
+  Your graph has 0 edges on 0 nodes and is... a blank screen. Remedy this by clicking around!
+  </header>
+  <header class="help"> <!-- Gives help info, floats on top -->
+  h = help; r = reset; s = delete all edges; d = destroy edges; e = erase nodes; a = connect all nodes
+  </header>
+</body>
+</html>

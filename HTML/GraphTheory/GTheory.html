@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+  height: 100%;
+}
+body {
+  background-color: floralwhite;
+  width: 100%;
+  min-height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+div {
+  position: absolute;
+}
+span {
+  background-color: black;
+  opacity: 0.8;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  position: absolute;
+  transition: all ease .1s;
+  transform-origin: center;
+  z-index: 1;
+}
+header#num {
+  margin: 10px 0 0 0;
+  color: crimson;
+  width: 0px;
+  height: 0px;
+  text-align: center;
+  z-index: 2;
+}
+header {
+  position: absolute;
+  color: black;
+  text-align: center;
+}
+header.lab {
+  color: crimson;
+  font-size: 20px;
+}
+header.arr {
+  color: lightblue;
+  font-size: 30px;
+}
+header.stats {
+  width: 100%;
+  top: 0px;
+  text-align: left;
+}
+header.help {
+  position: relative;
+  width: 49%;
+  top: 0px;
+  float: right;
+  text-align: right;
+}
+span:hover {
+  background-color: darkgray;
+  transform: scale(3);
+}
+p {
+  height: 2px;
+  width: 2px;
+  display: block;
+  position: absolute;
+  transform-origin: top;
+  border-color: lightblue;
+  background-color: lightblue;
+  border-left: 2px;
+  border-right: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script>
+$(function() {
+  //Defining Variables
+  var x = 0;
+  var y = 0;
+  var cX = 200;
+  var cY = 200;
+  var cent;
+  var crnt;
+  var lst;
+  var destroy = false;
+  var unlab = false
+  var erase = false;
+  var help = true;
+  var nod1 = true;
+  var label = false;
+  var eNum = 0;
+  var nNum = 0;
+  var pubNNum = 0;
+  var pNum;
+  var sNum;
+  var lNum = 1;
+  var eId;
+  var nId;
+  //Calculate letter given number
+  $.fn.nlet = function(num) {
+    var lets = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+    var sig = '';
+    var numd = 0;
+    sig = lets[num - 1];
+    //If the number is greater than 26, start adding a second
+    if (num > 26) {
+      numd = Math.floor((num - 1) / 26);
+      sig = lets[numd - 1] + lets[num - (26 * numd) - 1];
+    }
+    return sig;
+  }
+  //Make node
+  $.fn.dit = function(x, y) {
+    nNum = nNum + 1;
+    pubNNum = pubNNum + 1;
+    $('div').append('<span id="' + nNum + '" style="top:' + (y - 5) + 'px; left: ' + (x - 5) + 'px;"></span>');
+    $('div span#' + nNum).append('<header id="num">' + $.fn.nlet(nNum) + '</header>')
+  }
+  //Make edge
+  $.fn.dish = function(x, y, cX, cY, pNum, sNum) {
+    if (pNum == sNum) { //Checks that same node twice
+      //Checks that edge is not present on map
+    } else if ($('#z' + pNum + 'to' + sNum + "z").length == 0 && $('#z' + sNum + 'to' + pNum + "z").length == 0){
+      eNum = eNum + 1;
+      //Calculate line dimensions
+      var angle = (180 / Math.PI) * Math.atan2((y - cY), (x - cX));
+      var length = Math.sqrt(Math.abs(((x - cX) * (x - cX)) + ((y - cY) * (y - cY))));
+      $('div').append('<p id="z' + pNum + 'to' + sNum + 'z" style="top:' + (y - 15) + 'px; left: ' + (x - 1) + 'px; height: ' + length + 'px; transform: rotate(' + (angle + 90) + 'deg);"></p>');
+      //Uncomment for backwards arrows on edges
+      //$('div p#z' + pNum + 'to' + sNum + 'z').append('<header class="arr" style="margin: ' + ((length / 2) - 20) + 'px 0 0 ' + -10 + 'px;">V</header>');
+    }
+  }
+  //Update stats bar
+  $.fn.stats = function() {
+    var pE = pubNNum - 1;
+    if (pubNNum == 0) {
+      pE = 0;
+    }
+    $('header.stats').html("Edges: " + eNum + "    Nodes: " + pubNNum + "    PathEdges: " + pE + "    CycleEdges: " + pubNNum + "    MaxEdges: " + (pubNNum*(pubNNum-1))/2);
+  }
+  //Define end coordinates based of end spans
+  $.fn.ends = function(crnt, lst) {
+    x = parseInt(crnt.css("left"), 10) + 5;
+    y = parseInt(crnt.css("top"), 10) + 5;
+    cX = parseInt(lst.css("left"), 10) + 5;
+    cY = parseInt(lst.css("top"), 10) + 5;
+  }
+  //MOUSE FUNCTIONS
+  //entire page on click
+  $('body').on('click', function() {
+    if (!cent && label == true) {
+      x = event.pageX;
+      y = event.pageY;
+      $('div').append('<header class="lab" style="top:' + (y - 5) + 'px; left: ' + (x - 5) + 'px;">' + lNum + '</header>');
+      lNum = lNum + 1;
+    } else if (!cent) {
+      //Drawing nodes
+      nod1 = true;
+      x = event.pageX;
+      y = event.pageY;
+      $.fn.dit(x, y);
+    //When hovering over a node and when in edge-draw (non node-draw) mode
+    } else if (cent) {
+      //Drawing edges
+      x = parseInt(cent.css("left"), 10) + (parseInt(cent.css("width"), 10)/2);
+      y = parseInt(cent.css("top"), 10) + (parseInt(cent.css("height"), 10)/2) - 1;
+      //Start of edge
+      if (nod1 == true) {
+        cX = x;
+        cY = y;
+        nod1 = false;
+        sNum = cent.prop('id');
+      //End of edge
+      } else if (nod1 == false && pNum != sNum) {
+        pNum = cent.prop('id')
+        $.fn.dish(x, y, cX, cY, pNum, sNum);
+        nod1 = true;
+      }
+    }
+    //Update stats
+    $.fn.stats();
+  })
+  //Hovering over node
+  $('body').on('mouseover', 'span', function() {
+    cent = $(this);
+    //When hovering over a span (node) in erase mode
+    if (cent && erase == true) {
+      //Deleting node and all connected edges
+      nId = cent.prop('id');
+      //Sorting through edges
+      $('div p').each(function() {
+        eId = $(this).prop('id');
+        //Checking for connected edges
+        if (~eId.indexOf("z" + nId + "to") || ~eId.indexOf("to" + nId + "z")) {
+          $(this).remove();
+          eNum = eNum - 1;
+        }
+      })
+      //Deleting node
+      cent.remove();
+      cent = false;
+      //Updating stats
+      pubNNum = pubNNum - 1;
+      $.fn.stats();
+    //When not hovering over a node and when in node-draw mode
+    }
+  })
+  $('body').on('mouseout', 'span', function() {
+    cent = null;
+  })
+  //Hovering over edge
+  $('body').on('mouseover', 'p', function() {
+    if (destroy == true) {
+      this.remove();
+      eNum = eNum - 1;
+      $.fn.stats();
+    }
+  })
+  $('body').on('mouseover', 'header.lab', function() {
+    if (unlab == true) {
+      this.remove();
+    }
+  })
+  //KEYBOARD FUNCTIONS
+  $('body').keydown(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    //Basic toggles
+    //Checking for h (for help bar toggle)
+    if (keycode == 72 && help == false) {
+      $('header.help').css('color', 'black');
+      help = true;
+    } else if (keycode == 72) {
+      $('header.help').css('color', 'transparent');
+      help = false;
+    }
+    //Checking for l (to toggle labeling)
+    if (keycode == 76 && label == false) {
+      label = true;
+    } else if (keycode == 76) {
+      label = false;
+    }
+
+    //Destructive functions
+    //Entire deletions
+    //Checking for r (to reset EVERYTHING)
+    if (keycode == 82) {
+      $('div p').each( function() {$(this).remove()});
+      $('div span').each( function() {$(this).remove()});
+      $('div header.lab').each( function() {$(this).remove()});
+      lNum = 1;
+      eNum = 0;
+      nNum = 0;
+      pubNNum = 0;
+      label = false;
+      destroy = false;
+      unlab = false;
+      erase = false;
+      $.fn.stats();
+    }
+    //Checking for n (to delete all labels)
+    if (keycode == 78) {
+      $('div header.lab').each( function() {$(this).remove()});
+      lNum = 1;
+      label = false;
+    }
+    //Checking for s (to delete all edges)
+    if (keycode == 83) {
+      $('div p').each( function() {$(this).remove()});
+      eNum = 0;
+      $.fn.stats();
+    }
+    //Toggled deletions
+    //Checking for d (for destroy toggle for edges)
+    if (keycode == 68 && destroy == false) {
+      destroy = true;
+    } else if (keycode == 68) {
+      destroy = false;
+    }
+    //Checking for u (for destroy toggle for labels)
+    if (keycode == 85 && unlab == false) {
+      unlab = true;
+    } else if (keycode == 85) {
+      unlab = false;
+    }
+    //Checking for e (for erase toggle for nodes)
+    if (keycode == 69 && erase == false) {
+      erase = true;
+    } else if (keycode == 69) {
+      erase = false;
+    }
+
+    //Creative functions
+    //Checking for a (to perform allcnct)
+    if (keycode == 65) {
+      $('div span').each(function() {
+        crnt = $(this)
+        pNum = $(this).prop('id');
+        $('div span').each(function() {
+          lst = $(this)
+          $.fn.ends(crnt, lst);
+          sNum = $(this).prop('id');
+          $.fn.dish(x, y, cX, cY, pNum, sNum);
+        })
+      })
+      $.fn.stats();
+    }
+    //check for p (to make path)
+    if (keycode == 80) {
+      $('div p').each( function() {$(this).remove()});
+      eNum = 0;
+      $('div span').each(function() {
+        crnt = $(this);
+        pNum = crnt.prop('id');
+        sNum = pNum - 1;
+        lst = $('div span#' + sNum);
+        // for (i = 0; i < sNum; i++) {
+        //   if ($('div span#' + sNum - i)) {
+        //     lst = $('div span#' + sNum - i);
+        //     return
+        //   }
+        // }
+        if (pNum != 1) {
+          $.fn.ends(crnt, lst);
+          $.fn.dish(x, y, cX, cY, pNum, sNum);
+        }
+      })
+      $.fn.stats();
+    }
+    //check for c (to make cycle)
+    if (keycode == 67) {
+      $('div p').each( function() {$(this).remove()});
+      eNum = 0;
+      $('div span').each(function() {
+        crnt = $(this);
+        lst;
+        pNum = crnt.prop('id');
+        sNum = pNum - 1;
+        if (pNum == 1) {
+          sNum = nNum
+          lst = $('div span#' + sNum);
+        } else {
+          lst = $('div span#' + sNum);
+        }
+        $.fn.ends(crnt, lst);
+        $.fn.dish(x, y, cX, cY, pNum, sNum);
+      })
+      $.fn.stats();
+    }
+  })
+})
+
+//More Stats?
+//Layered edges/ show walks
+//Calculate whether connected?
+//Fix paths and cycles to work after deletions
+//Create trees
+//Determine things about trees
+//Create new thing that automatically makes trees on click?
+</script>
+</head>
+<body>
+  <div>
+  <!-- This one does EVERYTHING -->
+  </div>
+  <header class="stats">
+  <!-- Gives graph info, floats on top -->
+  Edges: 0    Nodes: 0    PathEdges: 0    CycleEdges: 0    MaxEdges: 0
+  </header>
+  <header class="help">
+  <!-- Gives help info, floats on top -->
+  h = help; l = toggle labeling; r = reset; n = delete all labels; s = delete all edges; d = destroy edges; u = unlabel labels; e = erase nodes; a = connects all nodes; p = path; c = cycle
+  </header>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+  height: 100%;
+}
+body {
+  background-color: floralwhite;
+  width: 100%;
+  min-height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+div {
+  position: absolute;
+}
+
+span {
+  background-color: tomato;
+  opacity: 0.8;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+  position: absolute;
+  transition: all ease .1s;
+  transform-origin: center;
+  z-index: 1;
+}
+
+span.knot {
+  background-color: gray;
+  width: 5px;
+  height: 5px;
+}
+
+span.dot:hover {
+  background-color: red;
+  transform: scale(3);
+}
+span.dut:hover {
+  background-color: coral;
+  transform: scale(2.5);
+}
+span.knot:hover {
+  background-color: lightgray;
+  transform: scale(1);
+}
+
+p {
+  background-color: blue;
+  height: 0px;
+  width: 0px;
+  display: block;
+  position: absolute;
+  left: 50%;
+  transform-origin: top;
+  background-color: clear;
+  border-left: 1px solid blue;
+  border-right: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script>
+$(function() {
+  //Hi there!
+  //You can switch between two modes: Making dashes and drawing the knot.
+  //These are toggled between by ctrl/shift m.
+  //The color of the drawing can be changed with ctrl/shift i.
+  //You can also undo or redo work with ctrl/shift z and y.
+  //And, finally, ctrl/shift a toggles the free dash eraser.
+  //Have fun!
+  var x = 0;
+  var y = 0;
+  var cX = 200;
+  var cY = 200;
+  var cent;
+  var angle = 0;
+  var length = 0;
+  var draw = false;
+  var destroy = false;6
+  var cId = 0;
+  var idColor = 'pink';
+  var sheft;
+  var lastX = [];
+  var lastY = [];
+  var kX = [];
+  var kY = [];
+  var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink']
+  //Set x and y
+
+  //Make dot
+  $.fn.dit = function() {
+    $('div').append('<span style="top:' + (y - 5) + 'px; left: ' + (x - 5) + 'px"></span>');
+  }
+  //Make dash
+  $.fn.dish = function() {
+    $('div').append('<p style="top:' + (y - 15) + 'px; left: ' + (x - 1) + 'px; height: 0px; transform: rotate(0deg)"></span>');
+  }
+  //Make dash connect to dot
+  $.fn.cnct = function() {
+    //determine dot positions
+    cX = parseInt($('div p:last-child').prevAll('p:first').css('left'), 10) + 1;
+    cY = parseInt($('div p:last-child').prevAll('p:first').css("top"), 10) + 15;
+    //calculate line dimensions
+    angle = (180 / Math.PI) * Math.atan2((y - cY), (x - cX));
+    length = Math.sqrt(Math.abs(((x - cX) * (x - cX)) + ((y - cY) * (y - cY))));
+    //apply line dimensions
+    if (angle % 90 === 0) {
+      $('div p:last-child').css("transform", "rotate(" + (angle + 90) + "deg)").css("height", length + "px");
+    }
+  }
+  //Making the grid
+  var i;
+  var j;
+  var wid = $(window).width();
+  var hig = $(window).height();
+  var distX = 60;
+  var distY = 60;
+  var m = Math.round(wid/distY);
+  var n = Math.round(hig/distX);
+  for (i = 0; i < m; i++) {
+    for (j = 0; j < n; j++) {
+      x = 10 + distX * i;
+      y = 10 + distY * j;
+      $.fn.dit();
+      $('div span').last().attr("class", "dot");
+      if (i < m - 1 && j < n - 1) {
+        x = 10 + (distX/2) + distX * i;
+        y = 10 + (distY/2) + distY * j;
+        $.fn.dit();
+        $('div span').last().attr("class", "dut");
+      }
+    }
+  }
+  //entire page on click
+  $('body').on('click', function() {
+    if (cent && draw == false) {
+      x = parseInt(cent.css("left"), 10) + 5;
+      y = parseInt(cent.css("top"), 10) + 5;
+      $.fn.dit();
+      if ($(this).attr('class') == 'dot') {
+        $('div span').last().attr("class", "dot");
+      } else if ($(this).attr('class') == 'dut') {
+        $('div span').last().attr("class", "dut");
+      }
+      $.fn.dish();
+      $.fn.cnct();
+    }
+  })
+  //entire page on hover
+  $('body').on('mousemove', function() {
+    if (draw == true && cent == null) {
+      x = event.pageX + 5;
+      y = event.pageY + 5;
+      $.fn.dit();
+      $('div span').last().attr('class', 'knot');
+    }
+  })
+  //Hovering over dot
+  $('body').on('mouseover', 'span', function() {
+    cent = $(this);
+  })
+  $('body').on('mouseout', 'span', function() {
+    cent = null;
+  })
+  //Hovering over dash
+  $('body').on('mouseover', 'p', function() {
+    if (destroy == true) {
+      lastX.push(parseInt($(this).css('left'), 10) + 1);
+      lastY.push(parseInt($(this).css('top'), 10) + 15);
+      $(this).remove();
+    }
+  })
+
+  //Watching keyboard
+  //Checking for shift
+  $('body').keydown(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    //Checking for shift and/or control
+    if (keycode == 16 || keycode == 17) {
+      sheft = true;
+    }
+    //Checking for z (to undo)
+    //undoing dashes
+    if (keycode == 90 && sheft == true && $('div p').length != 0 && draw == false) {
+      lastX.push(parseInt($('div p').last().css('left'), 10) + 1);
+      lastY.push(parseInt($('div p').last().css('top'), 10) + 15);
+      $('div p').last().remove()
+    //undoing string
+    } else if (keycode == 90 && sheft == true && $('div span.knot').length != 0 && draw == true) {
+      var delNum = 10;
+      if ($('div span.knot').length < 10) {
+        delNum = $('div span.knot').length;
+      }
+      for (i = 0; i < delNum; i++) {
+        kX.push(parseInt($('div span.knot').last().css('left'), 10) + 5);
+        kY.push(parseInt($('div span.knot').last().css('top'), 10) + 5);
+        $('div span.knot').last().remove()
+      }
+    }
+    //Checking for y (to redo)
+    //redoing dashs
+    if (keycode == 89 && sheft == true && lastX.length != 0 & draw == false) {
+      x = lastX.pop();
+      y = lastY.pop();
+      //now add 'em back'
+      $.fn.dish();
+      $.fn.cnct();
+    //Redoing string
+    } else if (keycode == 89 && sheft == true && kX.length != 0 && draw == true) {
+      var delNum = 10;
+      if (kX.length < 10) {
+        delNum = kX.length;
+      }
+      for (i = 0; i < delNum; i++) {
+        x = kX.pop();
+        y = kY.pop();
+        $.fn.dit();
+        $('div span').last().attr('class', 'knot').attr('id', cId);
+      }
+    }
+    //Checking for m (to toggle drawing)
+    if (keycode == 77 && sheft == true && draw == false) {
+      draw = true;
+    } else if (keycode == 77 && sheft == true) {
+      draw = false;
+    }
+    //Checking for i (to change color)
+    if (keycode == 73 && sheft == true) {
+      if (cId > 6) {
+        cId = 0
+      }
+      idColor = colors[cId];
+      cId++
+      $('div span.knot').css('background-color', idColor).attr('class', cId);
+      $('div span.'+ cId).css('')
+    }
+    //Checking for a (for free dash destruction)
+    if (keycode == 65 && destroy == false) {
+      destroy = true;
+    } else if (keycode == 65) {
+      destroy = false;
+    }
+  })
+  $('body').keyup(function(event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    if (keycode == 16 || keycode == 17) {
+      sheft = false;
+    }
+  })
+})
+</script>
+</head>
+<body>
+  <div>
+  <!-- This one does EVERYTHING -->
+  </div>
+</body>
+</html>

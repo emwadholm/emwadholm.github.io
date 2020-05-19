@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Conquer and Grow</title>
+<script>history.scrollRestoration = "manual"</script>
+  <style>
+    body {
+      background: blue;
+      margin: 0;
+      padding: 0;
+      width: 103.02em;
+      height: 103.02em;
+      overflow: hidden;
+    }
+    span {
+      position: relative;
+      width: 2em;
+      height: 2em;
+      overflow: visible;
+      display: inline-block;
+      padding:0;
+      margin:0;
+      border: solid .01em lightgray;
+      z-index: 1;
+    }
+    .blank {
+      background: ghostwhite;
+      transition: all ease .05s;
+    }
+    .char {
+      position: fixed;
+      width: 2em;
+      height: 2em;
+      z-index: 5;
+      top: 50%;
+      left: 50%;
+    }
+    .charTime {
+      color: white;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      width: 1em;
+      height: 1em;
+      position: fixed;
+      z-index: 6;
+      margin: .2em 0 0 .4em;
+    }
+    .charPer {
+      color: black;
+      text-shadow: -1px 0 ghostwhite, 0 1px ghostwhite, 1px 0 ghostwhite, 0 -1px ghostwhite;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      width: 1em;
+      height: 1em;
+      position: fixed;
+      z-index: 6;
+      margin: -2em 0 0 -.2em;
+    }
+    .charPath {
+      transition-delay: 200ms;
+    }
+    span:hover {
+      background: blue;
+      transition: all ease .05s;
+    }
+    div {
+      z-index: 1;
+    }
+    .rows {
+      width: 103.02em;
+      height: 2.02em;
+    }
+    #map {
+      background: lightgray;
+      position: absolute;
+      width: 103.02em;
+      height: 103.02em;
+      transition: all linear 200ms;
+    }
+  </style>
+</head>
+<body scroll="no">
+  <div id="map"></div>
+  <script>
+    //DECLARE VARIABLES
+    //Choose character colors
+    // var charCol = '#ff0000'
+    var charCol = '#db9c58'
+    var charPathCol = '#f26f6f'
+    var charTerColI = '#eb564b'
+    var charTerColP = '#b5423a'
+    var charTerColS = '#7a302b'
+    //Choose starting place
+    var charStartX = 25
+    var charStartY = 25
+    var char = document.createElement('span')
+    var charTime = document.createElement('p')
+    var charPer = document.createElement('p')
+    //Variable Declarations gen.
+    var moving
+    var pathX = 0
+    var pathY = 0
+    var newPath = false
+    var move = ''
+    //Map mathy variables
+    var mappy = document.getElementById('map')
+    var mapX = -808 + (window.innerWidth/2)
+    var mapY = -808 + (window.innerHeight/2)
+    var lefts = mapX
+    var ups = mapY
+    var arrX = []
+    var arrY = []
+    mappy.style.margin = '' + mapY + 'px 0 0 ' + mapX + 'px';
+    var parity = [0,0,0,0]
+
+    //statistics
+    var nBlankNum
+    var filledFrac = 0
+    var win = false
+
+    //Challenge time limit variables
+    var time
+    var timed
+    var timing = false
+
+    //DECLARE FUNCTIONS
+    //Change character colors
+    //Array of color schemes; first is original
+    var colorSchema = [['#db9c58', '#f26f6f', '#eb564b', '#b5423a', '#7a302b'], ['#2c93e8','#00ffe5','#13d4c0','#0ca696','#148579'], ['#48e895', '#78ff03', '#72de14', '#54a60d', '#518a20'], ['#846cf0', '#8000ff', '#7617d4', '#58119e', '#552287'], ['#f04363', '#ff00a2', '#ff00a2', '#b01778', '#8f2167'], ['#e6d44c', '#fccb05', '#deb614', '#b59410', '#8f781b']]
+    function colChange(colNum) {
+      charCol = colorSchema[colNum][0]
+      charPathCol = colorSchema[colNum][1]
+      charTerColI = colorSchema[colNum][2]
+      charTerColP = colorSchema[colNum][3]
+      charTerColS = colorSchema[colNum][4]
+      char.style.background = charCol
+    }
+    //Create starting territory
+    function terrStart() {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          let terr = document.getElementById((charStartX + i - 1)+ 'n' + (charStartY + j - 1))
+          terr.className = 'charTerP'
+          terr.classList.remove('blank')
+          terr.style.background = charTerColS
+        }
+      }
+    }
+    //Place character in center of starting territory
+    function charStart() {
+      var charNum = 0
+      char.id = 'char' + charNum
+      char.className = 'char'
+      char.style.background = charCol
+      document.body.appendChild(char)
+      charTime.id = 'charTime' + charNum
+      charTime.className = 'charTime'
+      charPer.id = 'charPer' + charNum
+      charPer.className = 'charPer'
+      char.appendChild(charTime)
+      char.appendChild(charPer)
+
+    }
+    // var mapTimer
+    //Turns blank grids into path grids
+    function pathMaker(x,y) {
+      let path = document.getElementById(x + 'n' + y)
+      if (!path && win === false) {
+        deathScene()
+      } else if (path.className === 'blank') {
+        //Sets a timer to kill if you're outside t for too long. CHALLENGE 2
+        if (timing === false) {
+          timing = true
+          timed = setTimeout(function() {deathScene();}, 5000)
+          time = 0
+          timer = setInterval(function() {console.log(time); charTime.innerHTML = time; time = (time + .1); time = +time.toFixed(1);}, 100)
+        }
+        path.className = 'charPath'
+        path.classList.remove('blank')
+        path.style.background = charPathCol
+        newPath = true
+      } else if ((path.className === 'charPath' || path.className === 'charTer') && win === false) {
+        //CHALLENGE 1
+        deathScene()
+      } else if (path.className === 'charTerP' && newPath === true) {
+        newPath = false;
+        //FOR CHALLENGE 2
+        if (timing === true) {
+          timing = false
+          clearTimeout(timed)
+          charTime.innerHTML = ''
+          clearInterval(timer)
+        }
+        fillR()
+
+      }
+    }
+
+    //Player Arrow Controls
+    document.onkeydown = function(event) {
+      switch (event.keyCode) {
+        case 32: clearInterval(moving); break;
+        case 37: if (move != 'right') {move = 'left'}; break;
+        case 38: if (move != 'down') {move = 'up'}; break;
+        case 39: if (move != 'left') {move = 'right'}; break;
+        case 40: if (move != 'up') {move = 'down'}; break;
+      }
+    }
+
+    //Make sure window is still centered
+    function mapCenter() {
+      nMapX = -808 + (window.innerWidth/2)
+      nMapY = -808 + (window.innerHeight/2)
+      if (nMapX != mapX) {
+        lefts = lefts - mapX + nMapX
+        mapX = nMapX
+      }
+      if (nMapY != mapY) {
+        ups = ups - mapY + nMapY
+        mapY = nMapY
+      }
+    }
+
+    //Moves the map to simulate motion
+    function mapMove() {
+      //Move functioning
+      if (move === 'left') {
+        lefts = lefts + 32.3
+        pathX = pathX - 1
+      } else if (move === 'up') {
+        ups = ups + 32.3
+        pathY = pathY - 1
+      } else if (move === 'right') {
+        lefts = lefts - 32.3
+        pathX = pathX + 1
+      } else if (move === 'down') {
+        ups = ups - 32.3
+        pathY = pathY + 1
+      }
+      pathMaker((pathX + 25), (pathY + 25))
+      mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+    }
+    //Kill player, restore board to factory settings
+    function deathScene() {
+      clearInterval(moving)
+      clearInterval(timing)
+      clearInterval(timer)
+      if (true) {
+        //map.style.transition = "all ease 2s"
+
+        //Make set margin
+        ups = mapY
+        lefts = mapX
+        mappy.style.margin = '' + mapY + 'px 0 0 ' + mapX + 'px'
+        mappy.style.transform = 'rotateX(60deg) rotateZ(45deg) scale(.6)'
+        char.style.display = 'none'
+        spans = document.getElementsByTagName('span')
+        for (let i = 0; i < spans.length; i++) {
+          spans[i].style.border = 'none'
+          spans[i].style.height = '2.02em'
+          spans[i].style.width = '2.02em'
+        }
+      } else {
+        //Delete paths, territory
+        spans = document.getElementsByTagName('span')
+        for (let i = 0; i < spans.length; i++) {
+          var sClass = spans[i].getAttribute('class')
+          if (sClass != 'char') {
+            spans[i].className = 'blank'
+            spans[i].style.background = 'ghostwhite'
+          }
+        }
+        //turn off character
+        char.style.background = 'darkgray'
+        //Factory Settings
+        pathX = 0
+        pathY = 0
+        setTimeout(function() {
+          lefts = mapX
+          ups = mapY
+          mappy.style.transition = 'margin linear 0s'
+          mappy.style.margin = '' + ups + 'px 0 0 ' + lefts + 'px'
+          mappy.style.transition = 'margin linear 200ms'
+          terrStart()
+          charStart()
+          setTimeout(function() {
+            moving = setInterval(function() {mapMove();}, 200)
+          }, 1000)
+        }, 3000)
+      }
+    }
+      var line = false
+      var end = false
+      var dont = false
+      var innards = []
+      var remover = []
+      //The inside function for fillR
+      function fillCol(i, j, parNum, first) {
+        //Checking which coordinate system to use
+        if (first === true) {
+          elem = document.getElementById(i + 'n' + j)
+        } else if (first === false){
+          elem = document.getElementById(j + 'n' + i)
+        }
+        elCl = elem.getAttribute('class')
+        if (elCl === 'charPath' && line === true && dont === false) {
+          parity[parNum] = parity[parNum] + 1
+          dont = true
+          end = true
+        } else if (elCl === 'charPath' && line === false) {
+          //Increase parity each time
+          parity[parNum] = parity[parNum] + 1
+          line = true
+          dont = false
+        } else if (elCl === 'blank' && parity[parNum]%2 != 0 && dont === false) {
+          //In case of blank space within an odd parity of edges to the outside, save as possible territory
+          line = false
+          dont = false
+          elem.classList.remove('blank')
+          elem.className = 'charTerPoss'
+          elem.style.background = 'purple'
+        } else if (elCl === 'blank') {
+          line = false
+          dont = false
+          remover.push(elem.getAttribute('id'))
+        } else if (elCl === 'charTer' || elCl === 'charTerP'){
+          end = true
+          line = false
+          dont = false
+        } else if (elCl === 'charTerPoss' && parity[parNum]%2 == 0 && dont === false) {
+          //If two runs disagree, the prospective territory is denied its request
+          line = false
+          remover.push(elem.getAttribute('id'))
+        }
+      }
+
+      //Does a seed fill for any pesky remaining blanks
+      function innardsCheck(inns) {
+        newInnards = []
+        inns.forEach(function(inn, id) {
+          let x = parseInt(inn.split('n')[0], 10)
+          let y = parseInt(inn.split('n')[1], 10)
+          var places = []
+          places[0] = document.getElementById((x + 1) + 'n' + y)
+          places[1] = document.getElementById((x - 1) + 'n' + y)
+          places[2] = document.getElementById(x + 'n' + (y + 1))
+          places[3] = document.getElementById(x + 'n' + (y - 1))
+          places.forEach(function(pl, id2) {
+            if (pl) {
+              plCl = pl.getAttribute('class')
+              if (plCl === 'blank') {
+                pl.classList.remove('blank')
+                pl.className = 'charTer'
+                pl.style.background = charTerColI
+                //pl.style.background = 'orange'
+                newInnards.push(pl.getAttribute('id'))
+              }
+            }
+          })
+          if (newInnards[0]) {
+            innardsCheck(newInnards)
+          }
+        })
+      }
+
+  //Fill in territory using parity
+    function fillR() {
+      var maxX = 0; var minX = 55; arrX = [];
+      var maxY = 0; var minY = 55; arrY = [];
+      innards = []; remover = [];
+      let paths = document.getElementsByClassName('charPath')
+      let terrs = document.getElementsByClassName('charTer')
+      let terrPs = document.getElementsByClassName('charTerP')
+      let borders = [...paths, ...terrs, ...terrPs]
+      for (i = 0; i < borders.length; i++) {
+        var pathId = borders[i].getAttribute('id')
+        arrX.push(parseInt(pathId.split('n')[0], 10))
+        arrY.push(parseInt(pathId.split('n')[1], 10))
+      }
+      //Find max/min columns
+      for (i in arrX) {
+        if (arrX[i] < minX) { minX = arrX[i]; }
+        if  (arrX[i] > maxX) { maxX = arrX[i]; }
+      }
+      for (i in arrY) {
+        if (arrY[i] < minY) { minY = arrY[i]; }
+        if  (arrY[i] > maxY) { maxY = arrY[i]; }
+      }
+      //Calculate range of spanning
+      var kArray = []
+      function sortR(minC, maxC, arrC, arrR, p, first) {
+        for (i = minC; i <= maxC; i++) {
+          end = false; line = false; dont = false;
+          var minR = 55; var maxR = 0; kArray = [];
+          arrR.forEach(function(k, l) {
+            if (arrC[l] === i) { kArray.push(k); }
+          })
+          for (var m of kArray) {
+            if (m < minR) { minR = m;}
+            if (m > maxR) { maxR = m;}
+          }
+          //Sorting rows top to bottom
+          parity = [0,0,0,0]
+          for (j = minR; j <= maxR; j++) {
+            if (end === false) {
+              fillCol(i, j, (0 + p), first)
+            }
+          }
+          parity = [0,0,0,0]
+          line = false; end = false; dont = false;
+          //Sorting rows bottom to top
+          for (j = maxR; j >= minR; j--) {
+            if (end === false) {
+              fillCol(i, j, (1 + p), first)
+            }
+          }
+        }
+      }
+      sortR(minX, maxX, arrX, arrY, 0, true)
+      sortR(minY, maxY, arrY, arrX, 2, false)
+      //Turns all paths to Territory
+      for (i = 0; i < paths.length; i = i) {
+        elem = paths[i]
+        elem.classList.remove('charPath')
+        elem.className = 'charTerP'
+        elem.style.background = charTerColP
+      }
+      //Remove all prospies that didn't make the cut
+      for (i = 0; i < remover.length; i++) {
+        removed = document.getElementById(remover[i])
+        if (removed) {
+          console.log(removed)
+          removed.classList.remove('charTerPoss')
+          removed.className = 'blank'
+          removed.style.background = 'ghostwhite'
+        }
+      }
+      //Turn all prospective territories into charTer
+      possies = document.getElementsByClassName('charTerPoss')
+      for (var i = 0; i < possies.length; i = i) {
+        poss = possies[i]
+        possId = poss.getAttribute('id')
+        innards.push(possId)
+        poss.classList.remove('charTerPoss')
+        poss.className = 'charTer'
+        poss.style.background = charTerColI
+      }
+      //Fills in any gaps that may have been missed with a seed from each filled space
+      innardsCheck(innards)
+      //Updating Statistics
+      statZ()
+    }
+    function statZ() {
+      nBlankNum = document.body.getElementsByClassName('blank').length
+      filledFrac = ((2952 - nBlankNum)/2952)
+      charPer.innerHTML = (filledFrac*100).toFixed(2) + '%'
+      console.log((filledFrac*100).toFixed(2) + '%')
+      if (filledFrac === 1) {
+        colChange(5)
+        console.log("You've won!!!")
+        win = true
+        deathScene()
+      } else if (filledFrac > .8) {
+        colChange(4)
+      } else if (filledFrac > .6) {
+        colChange(3)
+      } else if (filledFrac > .4) {
+        colChange(2)
+      } else if (filledFrac > .2) {
+        colChange(1)
+      }
+    }
+
+
+    //ACTUAL STUFF THAT HAPPENS
+    //Create and center starting grid
+    //51 rows and 51 columns
+    for (let i = 0; i < 51; i++) {
+      let rowDiv = document.createElement('div')
+      rowDiv.id = 'row' + i
+      rowDiv.className = 'rows'
+      document.getElementById('map').appendChild(rowDiv)
+      for (let j = 0; j < 51; j++) {
+        let elem = document.createElement('span')
+        elem.id = '' + j + 'n' + i + ''
+        elem.className = 'blank'
+        document.getElementById('row' + i).appendChild(elem)
+      }
+    }
+
+    //Initialize character and territory
+    terrStart()
+    charStart()
+
+    //Start the game Movement
+    moving = setInterval(function() {mapMove();}, 200)
+    setInterval(function() {mapCenter();}, 1000)
+
+
+    //Create character divs inside for stats, display territory percent on top somewhere or on character
+
+
+  </script>
+</body>
+</html>

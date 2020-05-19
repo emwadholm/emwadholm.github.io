@@ -1,0 +1,51 @@
+OVERMAP:
+-custom zoom amount
+-custom colors?
+-custom other stuff; seedSpawn, seedBuff, etc.
+
+-Story mode
+-Freeform mode (checkboxes) (well on it's way)
+--Save freeform options as 'custom levels'
+-Multiplayer mode (share link)
+
+ODD-MAPS:
+-Make 'null' spans at specific ids, and in such a way make custom maps for Story mode
+-Make list of shapes for Freeform? (listed under irregular map)
+
+UNLOCKING:
+-Unlock shapes (and other things) as they are reached in story mode?
+-Cheat code to auto-unlock
+-Cookies to store unlocks?
+-Reset Game button w/ cheat code note?
+
+MISC:
+-Make own game modes, save in list
+
+-Make world timer, display time to win on death/completion; display always
+
+-Give preview of map in rotation when choosing settings (check mark to show)
+-Make custom shape by clicking on boxes (check that is connected through fill)
+
+-tips on start-up/deathScene
+-randomized from list
+OR sometimes given based off death or mapsize or other important factors
+
+-fix heart to add curving at middle edge of diamond (?)
+-fix crescent to be classically solvable (?)
+
+-rework set-up screen to have three mode screens, got to through the main menu.
+-add back buttons and go back only one menu when escaping  (?)
+-add reset values button to each screen
+
+-make notes on death about gamemode(s), map size, shape, time taken, etc.
+-can be screenshotted or [shared?]
+-random map size option (square option, too)
+
+-fix timed levels for slo-mo
+-fix to start at right value
+-fix bonuses to mult, too
+
+VERSION NOTES:
+WorldGenShape5 is most up to date RN <!>
+WorldGenShape5 changed zoom out to not rotate
+WorldGenShape3 did a huge reorganization and commenting of the file, and cleaned up some stuff

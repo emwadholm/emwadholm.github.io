@@ -1,0 +1,55 @@
+Paper2.0:
+
+   WORLD
+	World Grid for world states
+	Known Grid for visible world, gotten from from WG
+	Each grid made of spaces, default BS within WG
+	Blank Space is default
+	Outside space is extra option, not saved in anything (or around WG?)
+	If a space in KG is outside WG, it fills with 'outside' space
+
+   WORLD w/ PLAYER
+	Territory Space saved in WG w/ type and/or color
+	Movement Space saved in WG w/ type and/or color
+	Player Space saved in KG, center space w/ color
+	Player starts with PS, square of Gotten space
+	Known Grid centers on PS while PS is alive
+
+   PLAYER MOVEMENT
+	Player can move, default going straight
+	Player moves one space per time frame
+	Player can change direction right or left in any given TF
+	As Player 'moves', KG moves across WG
+
+   PLAYER EFFECT
+	If player is outside own TS, each space it moves over becomes MS
+	If player enters own TS, MS and enclosed becomes own TS
+	If player enters own MS, player dies
+	If player enters OS, player dies
+	When player dies, PS, MS, and TS become BS, movement ceases
+
+   MULTIPLAYER
+	Other player(s) has same experience, different color PS, TS, and MS
+	If playerN enters playerM MS, playerM dies, playerN gets killpoint
+	If playerN enters playerM TS, each M TS went over becomes N MS, can enclose N TS
+	Territory Score is player's total TS
+	Kill Score is player's total kills
+	Time is time frames passed
+
+
+PaperAI:
+   BASIC NET
+	Input is Known Grid
+	Output is Player turn (only three options: straight, left, right)
+	Hopefully:
+		Recognize player spaces, own v. otherwise (can check? change colors?)
+			What happens if same color? Should save own spaces?
+		Calculate Safe movement, avoid death
+			Defense and Offense, I'm not sure which will win
+		Maximize space gains through geometry
+		Develop tactics for self-preservation
+   POLICY NET
+	Plus points for territory enclosed.
+	Minus points for death (necessary? if dead, no enclosing)
+	Want maximize points over time? (time limit?)
+	Motivate murder?
